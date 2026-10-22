@@ -1,0 +1,26 @@
+{
+  "name": "nona",
+  "private": true,
+  "packageManager": "pnpm@11.17.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "infra:up": "docker compose -f infrastructure/docker-compose.yml up -d --wait",
+    "infra:down": "docker compose -f infrastructure/docker-compose.yml down",
+    "db:migrate": "pnpm --filter @nona/database migrate",
+    "db:seed": "pnpm --filter @nona/database seed",
+    "db:create-staff": "pnpm --filter @nona/database create-staff",
+    "db:reset": "pnpm --filter @nona/database reset",
+    "dev": "pnpm -r --parallel --filter @nona/web --filter @nona/api --filter @nona/worker dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "3.9.9",
+    "typescript": "5.9.3"
+  }
+}

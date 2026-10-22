@@ -1,0 +1,49 @@
+/* NONA design tokens — the single place for brand values. */
+:root {
+  --color-ink: #1f3d2b;
+  --color-ink-soft: #3b4a35;
+  --color-cream: #f7efdc;
+  --color-cream-deep: #f3e3bd;
+  --color-paper: #fffaf0;
+  --color-canvas: #fbf5e6;
+  --color-red: #b5442a;
+  --color-red-deep: #96351f;
+  --color-gold: #e3b865;
+  --color-gold-soft: #f3dba2;
+  --color-muted: #5b6652;
+  --color-line: rgba(31, 61, 43, 0.16);
+  --color-line-soft: rgba(31, 61, 43, 0.09);
+  --color-mint: #f3ebd2;
+  --color-warning: #8a5a00;
+
+  --font-display: var(--font-playfair), 'Playfair Display', Georgia, serif;
+  --font-body: var(--font-be-vietnam), 'Be Vietnam Pro', system-ui, sans-serif;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 72px;
+
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 34px;
+  --radius-pill: 999px;
+
+  --shadow-soft: 0 10px 32px rgba(35, 49, 42, 0.05);
+  --shadow-lift: 0 20px 44px rgba(35, 49, 42, 0.1);
+  --shadow-panel: 0 18px 55px rgba(35, 49, 42, 0.07);
+
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --header-h: 82px;
+  --focus-ring: 0 0 0 3px var(--color-paper), 0 0 0 5px var(--color-ink);
+}
+@media (max-width: 760px) {
+  :root {
+    --header-h: 67px;
+  }
+}

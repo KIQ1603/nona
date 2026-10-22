@@ -1,0 +1,4 @@
+interface:
+  display_name: 'NONA Commerce'
+  short_description: 'Quy tắc xây dựng hệ thống bán hàng NONA'
+  default_prompt: 'Use $nona-commerce to implement the next NONA commerce feature according to the project specifications.'

@@ -1,0 +1,27 @@
+{
+  "name": "@nona/database",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "migrate": "tsx --env-file=../.env src/cli.ts migrate",
+    "seed": "tsx --env-file=../.env src/cli.ts seed",
+    "create-staff": "tsx --env-file=../.env src/cli.ts create-staff",
+    "reset": "tsx --env-file=../.env src/cli.ts reset",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "test": "echo \"no tests in @nona/database\""
+  },
+  "dependencies": {
+    "pg": "8.23.1",
+    "@node-rs/argon2": "2.2.2"
+  },
+  "devDependencies": {
+    "@nona/config": "workspace:*",
+    "@nona/contracts": "workspace:*",
+    "@types/node": "22.20.5",
+    "@types/pg": "8.23.1",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3"
+  }
+}

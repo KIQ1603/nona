@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="NONA — Nón Việt, dấu ấn riêng. Khám phá những thiết kế nón lá thủ công và tự tạo chiếc nón của riêng bạn.">
+  <title>Shop nón lá | NONA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="announcement">
+    <p>Miễn phí vận chuyển cho đơn từ 600.000đ</p>
+    <button type="button" aria-label="Đóng thông báo">×</button>
+  </div>
+
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="NONA - Trang chủ">
+      <span class="brand-mark">N</span>
+      <span>NONA</span>
+    </a>
+    <nav class="desktop-nav" aria-label="Điều hướng chính">
+      <a class="active" href="#shop">Shop</a>
+      <a href="#story">Câu chuyện</a>
+      <a href="#craft">Nghệ nhân</a>
+      <a href="#journal">Góc cảm hứng</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-button search-toggle" type="button" aria-label="Tìm kiếm">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+      </button>
+      <button class="icon-button wishlist-header" type="button" aria-label="Sản phẩm yêu thích">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"></path></svg>
+        <span class="badge wishlist-count">0</span>
+      </button>
+      <button class="icon-button cart-toggle" type="button" aria-label="Mở giỏ hàng">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l1 14H5L6 7Z"></path><path d="M9 9V5a3 3 0 0 1 6 0v4"></path></svg>
+        <span class="badge cart-count">0</span>
+      </button>
+      <button class="menu-toggle" type="button" aria-label="Mở menu"><span></span><span></span></button>
+    </div>
+  </header>
+
+  <div class="mobile-nav" aria-hidden="true">
+    <button class="mobile-nav-close" type="button" aria-label="Đóng menu">×</button>
+    <a href="#shop">Shop</a><a href="#story">Câu chuyện</a><a href="#craft">Nghệ nhân</a><a href="#journal">Góc cảm hứng</a>
+  </div>
+
+  <main id="shop">
+    <section class="shop-hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Bộ sưu tập NONA</p>
+        <h1>Nón Việt,<br><em>dấu ấn riêng.</em></h1>
+        <p>Mỗi chiếc nón là một câu chuyện được đan bằng đôi tay người Việt, để bạn mang theo một nét quê hương theo cách của riêng mình.</p>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <span class="sun"></span>
+        <div class="hat-shape"><span></span></div>
+        <svg class="hero-line" viewBox="0 0 600 250"><path d="M-20 190C120 60 250 280 400 95S650 155 700 20"/></svg>
+        <p>Thủ công<br>tại Việt Nam</p>
+      </div>
+    </section>
+
+    <section class="category-strip" aria-label="Danh mục sản phẩm">
+      <button class="category active" data-category="all"><span>✦</span>Tất cả</button>
+      <button class="category" data-category="classic"><span>⌒</span>Nón truyền thống</button>
+      <button class="category" data-category="painted"><span>〽</span>Nón họa</button>
+      <button class="category" data-category="fashion"><span>◯</span>Nón thời trang</button>
+      <button class="category" data-category="mini"><span>⌁</span>Quà tặng & Mini</button>
+    </section>
+
+    <section class="shop-layout">
+      <aside class="filters" aria-label="Bộ lọc sản phẩm">
+        <div class="filter-heading"><h2>Bộ lọc</h2><button class="reset-filters" type="button">Đặt lại</button></div>
+        <div class="filter-group open">
+          <button class="filter-title" type="button">Mức giá <span>−</span></button>
+          <div class="filter-content price-filter">
+            <input id="priceRange" type="range" min="100" max="1000" value="1000" step="50">
+            <div><span>100.000đ</span><strong id="maxPriceLabel">1.000.000đ</strong></div>
+          </div>
+        </div>
+        <div class="filter-group open">
+          <button class="filter-title" type="button">Màu sắc <span>−</span></button>
+          <div class="filter-content color-list">
+            <button data-color="natural" aria-label="Màu tự nhiên" style="--swatch:#d9c59a"></button>
+            <button data-color="red" aria-label="Màu đỏ son" style="--swatch:#a93d31"></button>
+            <button data-color="blue" aria-label="Màu xanh lam" style="--swatch:#466579"></button>
+            <button data-color="pink" aria-label="Màu hồng" style="--swatch:#dba7a2"></button>
+            <button data-color="black" aria-label="Màu đen" style="--swatch:#262521"></button>
+          </div>
+        </div>
+        <div class="filter-group open">
+          <button class="filter-title" type="button">Phong cách <span>−</span></button>
+          <div class="filter-content checkbox-list">
+            <label><input type="checkbox" value="minimal"><span></span>Tối giản</label>
+            <label><input type="checkbox" value="floral"><span></span>Hoa lá</label>
+            <label><input type="checkbox" value="heritage"><span></span>Di sản</label>
+            <label><input type="checkbox" value="modern"><span></span>Đương đại</label>
+          </div>
+        </div>
+        <div class="filter-note"><span>✦</span><p>Mỗi sản phẩm đều được hoàn thiện thủ công bởi nghệ nhân Việt.</p></div>
+      </aside>
+
+      <div class="products-area">
+        <div class="toolbar">
+          <p><strong id="productCount">8</strong> sản phẩm</p>
+          <div class="toolbar-actions">
+            <button class="mobile-filter-toggle" type="button">Bộ lọc <span>☷</span></button>
+            <label for="sortSelect">Sắp xếp:</label>
+            <select id="sortSelect">
+              <option value="featured">Nổi bật</option>
+              <option value="price-asc">Giá: thấp đến cao</option>
+              <option value="price-desc">Giá: cao đến thấp</option>
+              <option value="name">Tên A–Z</option>
+            </select>
+            <div class="view-switch" aria-label="Kiểu hiển thị">
+              <button class="active" type="button" aria-label="Hiển thị dạng lưới">⠿</button>
+              <button type="button" aria-label="Hiển thị dạng danh sách">☷</button>
+            </div>
+          </div>
+        </div>
+        <div id="productGrid" class="product-grid"></div>
+        <div class="empty-state" hidden>
+          <span>⌁</span><h3>Chưa tìm thấy chiếc nón phù hợp</h3><p>Thử đổi từ khóa hoặc bộ lọc nhé.</p><button type="button">Xóa bộ lọc</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="custom-cta">
+      <div class="cta-pattern" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+      <div>
+        <p class="eyebrow">NONA Custom</p>
+        <h2>Chiếc nón kể<br><em>câu chuyện của bạn.</em></h2>
+        <p>Chọn màu, họa tiết và lời nhắn riêng. Chúng tôi sẽ cùng nghệ nhân biến ý tưởng của bạn thành một chiếc nón độc bản.</p>
+        <a href="#custom">Bắt đầu thiết kế <span>→</span></a>
+      </div>
+      <div class="custom-visual" aria-hidden="true"><div class="custom-hat"><b>nona</b></div><span>Độc bản<br>cho riêng bạn</span></div>
+    </section>
+  </main>
+
+  <footer>
+    <a class="brand footer-brand" href="#"><span class="brand-mark">N</span><span>NONA</span></a>
+    <p>Nón Việt, dấu ấn riêng.</p>
+    <div><a href="#">Instagram</a><a href="#">Facebook</a><a href="#">TikTok</a></div>
+    <small>© 2026 NONA. Được làm với tình yêu tại Việt Nam.</small>
+  </footer>
+
+  <div class="drawer-overlay"></div>
+  <aside class="cart-drawer" aria-hidden="true">
+    <div class="drawer-header"><div><p class="eyebrow">Giỏ hàng</p><h2>Những món bạn chọn</h2></div><button class="cart-close" type="button" aria-label="Đóng giỏ hàng">×</button></div>
+    <div class="cart-items"></div>
+    <div class="cart-empty"><span>⌒</span><h3>Giỏ hàng đang trống</h3><p>Chọn một chiếc nón thật hợp với bạn nhé.</p></div>
+    <div class="cart-footer" hidden><div><span>Tạm tính</span><strong class="cart-total">0đ</strong></div><button type="button">Thanh toán an toàn <span>→</span></button><small>Phí vận chuyển được tính ở bước tiếp theo</small></div>
+  </aside>
+
+  <div class="search-panel" aria-hidden="true">
+    <button class="search-close" type="button" aria-label="Đóng tìm kiếm">×</button>
+    <p class="eyebrow">Bạn đang tìm gì?</p>
+    <div><input id="searchInput" type="search" placeholder="Nón sen, nón truyền thống..." autocomplete="off"><span>⌕</span></div>
+    <p class="search-hint">Nhấn Enter để xem kết quả</p>
+  </div>
+
+  <div class="toast" role="status" aria-live="polite"></div>
+  <script src="script.js"></script>
+</body>
+</html>

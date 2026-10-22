@@ -1,0 +1,7 @@
+node_modules
+dist
+.next
+prototype
+pnpm-lock.yaml
+.agents
+AGENTS.md

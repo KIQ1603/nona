@@ -1,0 +1,14 @@
+{
+  "extends": "@nona/config/tsconfig.base.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node10",
+    "outDir": "dist",
+    "baseUrl": ".",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "types": ["node"],
+    "incremental": true
+  },
+  "include": ["src", "test", "vitest.config.ts"]
+}

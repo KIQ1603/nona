@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Nón Lá Xưa — Hồn Việt trên đỉnh đầu</title>
+<meta name="description" content="Nón Lá Xưa - cửa hàng nón lá thủ công truyền thống Việt Nam: nón truyền thống, nón bài thơ, nón vẽ sen, nón quai thao.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,800;1,500;1,700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<style>
+:root{--cream:#f7efdc;--straw:#e3b865;--green:#1f3d2b;--terra:#b5442a;--ink:#24170f;--hc:#1f3d2b}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:#14281c;font-family:'Be Vietnam Pro',sans-serif;color:var(--ink);-webkit-tap-highlight-color:transparent}
+body[data-theme=dark]{--hc:#f6ecd6}
+body[data-theme=light]{--hc:#1f3d2b}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:80;opacity:.09;mix-blend-mode:multiply;
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
+.fd{font-family:'Playfair Display',serif}
+button{font-family:inherit;cursor:pointer}
+img{-webkit-user-drag:none;user-select:none}
+
+#stage{position:fixed;inset:0;height:100dvh;overflow:hidden}
+.slide{position:absolute;inset:0;overflow:hidden;will-change:transform;visibility:hidden;
+ transition:transform .95s cubic-bezier(.77,0,.18,1);user-select:none;-webkit-user-select:none;cursor:grab}
+.slide:active{cursor:grabbing}
+.slide::after{content:'';position:absolute;inset:0;background:#0b0804;opacity:var(--shade,0);pointer-events:none;z-index:30;transition:opacity .95s ease}
+.slide.drag::after{transition:none}
+.inner{position:absolute;inset:0;overflow-y:auto;display:flex;padding:88px 22px 92px;scrollbar-width:none;touch-action:pan-y;overscroll-behavior:contain;z-index:5}
+.inner::-webkit-scrollbar{display:none}
+.wrap{margin:auto;width:100%;max-width:1180px}
+input,select,textarea{user-select:text;-webkit-user-select:text;cursor:text}
+
+/* reveal */
+[data-a]{opacity:0;transform:translate3d(0,46px,0);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1);transition-delay:0s}
+[data-a=zoom]{transform:scale(.6) rotate(-8deg)}
+[data-a=left]{transform:translate3d(-60px,0,0)}
+[data-a=right]{transform:translate3d(60px,0,0)}
+[data-a=fade]{transform:none}
+.slide.active [data-a]{opacity:1;transform:none;transition-delay:calc(var(--d,0) * 1ms + 500ms)}
+
+/* header / ui */
+.hdr,#dots,#counter,#navbtns{color:var(--hc);transition:color .6s}
+.navlink{position:relative;opacity:.8;transition:opacity .3s;background:none;border:0;color:inherit;font-size:.85rem;letter-spacing:.04em}
+.navlink:hover{opacity:1}
+.navlink::after{content:'';position:absolute;left:0;right:0;bottom:-6px;height:1.5px;background:currentColor;transform:scaleX(0);transition:transform .4s;transform-origin:left}
+.navlink:hover::after,.navlink.on::after{transform:scaleX(1)}
+.dot{width:10px;height:10px;border-radius:99px;border:1.5px solid var(--hc);background:transparent;padding:0;position:relative;transition:all .5s cubic-bezier(.3,.8,.2,1)}
+.dot.on{background:var(--hc);height:30px}
+.dot span{position:absolute;right:24px;top:50%;transform:translateY(-50%) translateX(8px);white-space:nowrap;font-size:12px;opacity:0;pointer-events:none;transition:.3s;color:var(--hc)}
+@media(hover:hover){.dot:hover span{opacity:1;transform:translateY(-50%)}}
+@media(max-width:767px){.dot span{display:none}.dot{width:8px;height:8px}.dot.on{height:22px}}
+.cbar{position:relative;width:56px;height:1.5px;background:rgba(127,127,127,.35);overflow:hidden}
+.cbar i{position:absolute;inset:0;background:currentColor;transform-origin:left;transition:transform .9s cubic-bezier(.77,0,.18,1)}
+.nb{width:42px;height:42px;border-radius:50%;border:1.5px solid currentColor;background:transparent;color:inherit;display:grid;place-items:center;transition:.3s}
+.nb:hover{background:var(--hc);color:#fff}
+body[data-theme=dark] .nb:hover{color:#14281c}
+.badge{position:absolute;top:-6px;right:-8px;min-width:19px;height:19px;border-radius:99px;background:var(--terra);color:#fff;font-size:11px;display:grid;place-items:center;font-weight:600;transition:transform .3s}
+.badge.pop{animation:pop .5s}
+@keyframes pop{50%{transform:scale(1.6)}}
+
+/* hero */
+.hh{width:min(76vw,44vh)}
+@media(min-width:1024px){.hh{width:min(40vw,62vh)}}
+.hero-hat{transform:translate3d(calc(var(--mx,0) * -18px),calc(var(--my,0) * -12px),0) rotate(calc(var(--mx,0) * 3deg));transition:transform .4s ease-out}
+.float{animation:float 6s ease-in-out infinite;transform-origin:50% 90%}
+@keyframes float{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-16px) rotate(2deg)}}
+.sun-rays{position:absolute;inset:-22%;border-radius:50%;background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.55) 0 5deg,transparent 5deg 14deg);-webkit-mask-image:radial-gradient(circle,#000 25%,transparent 68%);mask-image:radial-gradient(circle,#000 25%,transparent 68%);animation:spin 80s linear infinite}
+.sun-core{position:absolute;inset:6%;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe9ae,#f7b66a 60%,#ee8f4d);box-shadow:0 0 120px 30px rgba(255,190,100,.55)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.leaf{position:absolute;top:-8%;width:12px;height:26px;border-radius:0 100% 0 100%;background:linear-gradient(135deg,#8fb35a,#3f6b3a);opacity:.7;animation:fall linear infinite;z-index:2}
+@keyframes fall{0%{transform:translate3d(0,-10vh,0) rotate(0)}50%{transform:translate3d(50px,55vh,0) rotate(360deg)}100%{transform:translate3d(-30px,115vh,0) rotate(720deg)}}
+.hills path{transition:transform 1.4s cubic-bezier(.2,.7,.2,1)}
+.slide:not(.active) .hills path{transform:translateY(40px)}
+.mouse{width:24px;height:38px;border:1.8px solid currentColor;border-radius:14px;position:relative}
+.mouse::after{content:'';position:absolute;left:50%;top:7px;width:3px;height:7px;margin-left:-1.5px;border-radius:3px;background:currentColor;animation:wheel 1.6s infinite}
+@keyframes wheel{0%{opacity:0;transform:translateY(0)}30%{opacity:1}100%{opacity:0;transform:translateY(14px)}}
+.btn{display:inline-flex;align-items:center;gap:.6rem;border-radius:99px;padding:.9rem 1.6rem;font-weight:600;font-size:.92rem;border:1.5px solid transparent;transition:transform .3s,box-shadow .3s,background .3s,color .3s;position:relative;overflow:hidden}
+.btn:hover{transform:translateY(-3px)}
+.btn-p{background:var(--terra);color:#fff;box-shadow:0 12px 30px -10px rgba(181,68,42,.7)}
+.btn-p:hover{box-shadow:0 18px 36px -10px rgba(181,68,42,.85)}
+.btn-g{background:transparent;color:inherit;border-color:currentColor}
+.btn-g:hover{background:rgba(0,0,0,.06)}
+.eyebrow{font-size:.72rem;letter-spacing:.32em;text-transform:uppercase;font-weight:600;display:flex;align-items:center;gap:.8rem}
+.eyebrow::before{content:'';width:34px;height:1.5px;background:currentColor}
+
+/* story */
+.hatmask{clip-path:polygon(50% 0%,52% 1%,100% 87%,98% 92%,92% 96%,80% 99%,65% 100%,50% 100%,35% 100%,20% 99%,8% 96%,2% 92%,0% 87%,48% 1%)}
+.kb{animation:kb 18s ease-in-out infinite alternate}
+@keyframes kb{from{transform:scale(1.05) translateX(-2%)}to{transform:scale(1.25) translateX(3%)}}
+.stat{border-top:1px solid rgba(246,236,214,.25);padding-top:.9rem}
+
+/* collection */
+.stage3d{perspective:1000px}
+.disc{position:absolute;inset:6%;border-radius:50%;background:radial-gradient(circle at 30% 28%,#fffaf0,#f3dba2 70%,#e8c880)}
+.ring{position:absolute;inset:0;border-radius:50%;border:1.5px dashed rgba(31,61,43,.35);animation:spin 40s linear infinite}
+.chip{border:1.5px solid transparent;border-radius:18px;padding:6px 10px 6px 6px;background:rgba(255,255,255,.55);display:flex;align-items:center;gap:8px;text-align:left;transition:.3s;color:var(--ink)}
+.chip:hover{background:#fff;transform:translateY(-2px)}
+.chip.on{border-color:var(--terra);background:#fff;box-shadow:0 10px 24px -12px rgba(0,0,0,.4)}
+.sw{width:30px;height:30px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1.5px rgba(0,0,0,.2);transition:.3s;padding:0}
+.sw.on{box-shadow:0 0 0 2px var(--ink);transform:scale(1.12)}
+.tagp{font-size:.72rem;padding:.3rem .75rem;border-radius:99px;background:rgba(31,61,43,.09);color:var(--green);font-weight:500}
+
+/* process */
+.pc{border:1px solid rgba(227,184,101,.25);border-radius:22px;padding:1.2rem;background:rgba(255,255,255,.04);transition:transform .4s,border-color .4s,background .4s;height:100%}
+.pc:hover{transform:translateY(-8px);border-color:var(--straw);background:rgba(255,255,255,.09)}
+.pnum{font-family:'Playfair Display',serif;font-size:2.8rem;line-height:1;color:transparent;-webkit-text-stroke:1.2px var(--straw);font-weight:800}
+.line{transform-origin:left;transform:scaleX(0);transition:transform 1.8s cubic-bezier(.7,0,.2,1) .6s}
+.slide.active .line{transform:scaleX(1)}
+
+/* cards stack */
+.card{position:absolute;inset:0;border-radius:22px;overflow:hidden;border:7px solid #fff;box-shadow:0 30px 60px -25px rgba(0,0,0,.55);transition:transform .8s cubic-bezier(.3,.8,.2,1),opacity .8s;cursor:pointer;background:#ddd}
+.card img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.card .cap{position:absolute;left:0;right:0;bottom:0;padding:2.2rem 1rem .9rem;background:linear-gradient(transparent,rgba(0,0,0,.65));color:#fff;font-size:.8rem}
+.qfade{transition:opacity .35s,transform .35s}
+.qfade.out{opacity:0;transform:translateY(14px)}
+
+/* form */
+.fi{width:100%;background:transparent;border:0;border-bottom:1.5px solid rgba(36,23,15,.25);padding:.75rem 0;outline:none;font:inherit;font-size:.95rem;color:var(--ink);transition:border-color .3s;border-radius:0}
+.fi:focus{border-color:var(--terra)}
+.fi::placeholder{color:rgba(36,23,15,.45)}
+.qbtn{width:26px;height:26px;border-radius:50%;border:1.3px solid rgba(36,23,15,.35);background:transparent;line-height:1;display:grid;place-items:center;transition:.2s;font-size:14px}
+.qbtn:hover{background:var(--ink);color:#fff}
+#toast{position:fixed;left:50%;bottom:84px;transform:translate(-50%,30px);opacity:0;background:#1f3d2b;color:#f6ecd6;padding:.8rem 1.3rem;border-radius:99px;font-size:.88rem;z-index:90;pointer-events:none;transition:.5s cubic-bezier(.2,.8,.2,1);box-shadow:0 14px 40px -10px rgba(0,0,0,.5);white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+.okpop{animation:okpop .8s cubic-bezier(.2,1.4,.3,1)}
+@keyframes okpop{from{transform:scale(.5);opacity:0}to{transform:none;opacity:1}}
+.bgword{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:'Playfair Display',serif;font-weight:800;line-height:1;white-space:nowrap;pointer-events:none;z-index:1}
+</style>
+</head>
+<body data-theme="light">
+
+<!-- HEADER -->
+<header class="hdr fixed top-0 inset-x-0 z-50 flex items-center justify-between px-5 md:px-10 py-4">
+  <button class="flex items-center gap-2 bg-transparent border-0 p-0" style="color:inherit" onclick="go(0)" aria-label="Trang chủ">
+    <span id="logoHat" class="block w-9 h-9"></span>
+    <span class="fd text-xl font-bold tracking-wide">Nón Lá <em class="font-medium" style="color:var(--terra)">Xưa</em></span>
+  </button>
+  <nav class="hidden md:flex gap-8" id="topnav">
+    <button class="navlink" data-go="1">Câu chuyện</button>
+    <button class="navlink" data-go="2">Bộ sưu tập</button>
+    <button class="navlink" data-go="3">Quy trình</button>
+    <button class="navlink" data-go="4">Khách hàng</button>
+    <button class="navlink" data-go="5">Đặt hàng</button>
+  </nav>
+  <button id="cartBtn" class="relative bg-transparent border-0 p-2" style="color:inherit" aria-label="Giỏ hàng" onclick="go(5)">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+    <span class="badge" id="badge" style="display:none">0</span>
+  </button>
+</header>
+
+<!-- SIDE DOTS -->
+<div id="dots" class="fixed right-3 md:right-7 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3 items-end"></div>
+
+<!-- COUNTER -->
+<div id="counter" class="fixed left-5 md:left-10 bottom-5 z-50 flex items-center gap-3 text-xs tracking-widest">
+  <span id="cNow" class="fd text-2xl font-bold">01</span>
+  <span class="cbar"><i id="cBar"></i></span>
+  <span class="opacity-70">06</span>
+  <span id="cTitle" class="hidden md:inline ml-3 uppercase opacity-70"></span>
+</div>
+
+<!-- NAV BUTTONS -->
+<div id="navbtns" class="fixed right-4 md:right-10 bottom-4 z-50 flex gap-2">
+  <button class="nb" onclick="go(state.i-1)" aria-label="Lên"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>
+  <button class="nb" onclick="go(state.i+1)" aria-label="Xuống"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+</div>
+
+<div id="toast"></div>
+
+<main id="stage">
+
+<!-- 0 HERO -->
+<section class="slide" data-theme="light" data-title="Trang chủ" style="background:linear-gradient(180deg,#fcf3dc 0%,#f8deb0 55%,#f1c78a 100%);z-index:1">
+  <div class="leaves absolute inset-0 pointer-events-none" id="leaves"></div>
+  <svg class="hills absolute bottom-0 inset-x-0 w-full pointer-events-none" style="height:24vh;z-index:3" viewBox="0 0 1440 300" preserveAspectRatio="none">
+    <path d="M0 140C200 60 400 180 700 110S1200 40 1440 120V300H0Z" fill="#b9d08c"/>
+    <path d="M0 190C250 120 500 230 800 170S1250 120 1440 190V300H0Z" fill="#82a95c" style="transition-delay:.15s"/>
+    <path d="M0 240C300 190 600 280 900 230S1300 200 1440 240V300H0Z" fill="#3f6b3a" style="transition-delay:.3s"/>
+  </svg>
+  <div class="inner">
+    <div class="wrap grid lg:grid-cols-2 items-center gap-2 lg:gap-6">
+      <div class="order-2 lg:order-1 text-center lg:text-left relative z-10" style="color:var(--green)">
+        <div class="eyebrow justify-center lg:justify-start mb-4" data-a style="--d:0;color:var(--terra)">Làng nghề truyền thống · Từ 1950</div>
+        <h1 class="fd font-extrabold leading-[.95]" style="font-size:clamp(3.2rem,9vw,7.6rem)" data-a style="--d:120">
+          <span style="display:block" data-a style="--d:100">Nón Lá</span>
+          <em class="font-bold" style="color:var(--terra);display:block">Hồn Việt</em>
+        </h1>
+        <p class="mt-5 max-w-md mx-auto lg:mx-0 text-[.95rem] md:text-base leading-relaxed" style="color:#3b4a35" data-a style="--d:300">
+          Từng chiếc nón đan bằng lá cọ non và vành tre vót tay, qua bàn tay nghệ nhân. Che nắng, che mưa — và che cả một miền ký ức.
+        </p>
+        <div class="mt-7 flex flex-wrap gap-3 justify-center lg:justify-start" data-a style="--d:450">
+          <button class="btn btn-p" onclick="go(2)">Khám phá bộ sưu tập
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          <button class="btn btn-g" onclick="go(1)">Câu chuyện làng nghề</button>
+        </div>
+      </div>
+      <div class="order-1 lg:order-2 grid place-items-center relative">
+        <div class="relative hh" data-a="zoom" style="--d:150">
+          <div class="sun-rays"></div><div class="sun-core"></div>
+          <div id="heroHat" class="hero-hat relative"><div class="float" id="heroHatIn"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="absolute bottom-5 inset-x-0 z-10 flex flex-col items-center gap-2 pointer-events-none text-white md:text-white" data-a="fade" style="--d:900">
+    <div class="mouse"></div>
+    <span id="hint" class="text-[.7rem] tracking-[.25em] uppercase font-medium"></span>
+  </div>
+</section>
+
+<!-- 1 STORY -->
+<section class="slide" data-theme="dark" data-title="Câu chuyện" style="background:radial-gradient(ellipse at 20% 20%,#2c5a3d 0%,#16301f 55%,#0f2217 100%);z-index:2;color:#f6ecd6">
+  <div class="bgword" style="font-size:42vw;color:rgba(246,236,214,.03)">70</div>
+  <div class="inner">
+    <div class="wrap grid md:grid-cols-2 gap-8 md:gap-14 items-center">
+      <div class="relative mx-auto" style="width:min(74vw,44vh)" data-a="zoom" style="--d:0">
+        <div style="filter:drop-shadow(0 30px 40px rgba(0,0,0,.5))">
+          <div class="hatmask overflow-hidden aspect-square w-full">
+            <img class="kb w-full h-full object-cover" draggable="false" alt="Nghệ nhân làm nón lá" src="https://images.pexels.com/photos/13757395/pexels-photo-13757395.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=800&w=1100">
+          </div>
+        </div>
+        <svg viewBox="0 0 200 200" class="absolute -right-5 -bottom-6 md:-right-10 w-28 md:w-36" style="animation:spin 22s linear infinite">
+          <defs><path id="circ" d="M100,100 m-78,0 a78,78 0 1,1 156,0 a78,78 0 1,1 -156,0"/></defs>
+          <circle cx="100" cy="100" r="98" fill="#b5442a"/>
+          <text font-size="15" font-weight="600" letter-spacing="2" fill="#f6ecd6"><textPath href="#circ" textLength="480" lengthAdjust="spacing">NÓN LÁ • THỦ CÔNG • VIỆT NAM • TỪ 1950 •</textPath></text>
+          <text x="100" y="116" text-anchor="middle" font-size="46" fill="#f6ecd6">⛰</text>
+        </svg>
+      </div>
+      <div>
+        <div class="eyebrow mb-4" style="color:var(--straw)" data-a style="--d:100">Câu chuyện</div>
+        <h2 class="fd font-bold leading-[1.05]" style="font-size:clamp(2rem,4.8vw,3.8rem)" data-a style="--d:200">Mỗi chiếc nón là một <em style="color:var(--straw)">bài thơ</em> đan bằng tay</h2>
+        <p class="mt-5 leading-relaxed text-[.95rem] md:text-base max-w-lg" style="color:rgba(246,236,214,.78)" data-a style="--d:300">
+          Từ những buổi sớm hái lá cọ còn đẫm sương, đến đêm khuya chằm từng mũi chỉ dưới đèn dầu — nón lá là kết tinh của kiên nhẫn và tình yêu quê hương. Chúng tôi giữ trọn từng công đoạn thủ công để bạn đội lên một chiếc nón thật sự có hồn.
+        </p>
+        <div class="mt-8 grid grid-cols-3 gap-4 max-w-lg" data-a style="--d:420">
+          <div class="stat"><div class="fd text-3xl md:text-4xl font-bold" style="color:var(--straw)"><span data-count="70">0</span>+</div><div class="text-xs mt-1 opacity-75">năm giữ nghề</div></div>
+          <div class="stat"><div class="fd text-3xl md:text-4xl font-bold" style="color:var(--straw)"><span data-count="16">0</span></div><div class="text-xs mt-1 opacity-75">vành tre vót tay</div></div>
+          <div class="stat"><div class="fd text-3xl md:text-4xl font-bold" style="color:var(--straw)"><span data-count="12000">0</span>+</div><div class="text-xs mt-1 opacity-75">khách yêu mến</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 2 COLLECTION -->
+<section class="slide" data-theme="light" data-title="Bộ sưu tập" style="background:linear-gradient(160deg,#fbf4e2,#f3e3bd);z-index:3">
+  <div class="bgword" style="font-size:44vw;color:rgba(31,61,43,.055)">NÓN</div>
+  <div class="inner">
+    <div class="wrap grid lg:grid-cols-2 gap-4 lg:gap-10 items-center">
+      <div class="relative grid place-items-center" data-a="zoom" style="--d:0">
+        <div class="relative" style="width:min(70vw,38vh)" id="stageBox">
+          <div class="disc"></div><div class="ring"></div>
+          <div class="stage3d relative"><div id="hatBox"></div></div>
+          <button class="nb absolute left-[-14px] md:left-[-34px] top-1/2 bg-white/60" style="color:var(--green);--hc:#1f3d2b" onclick="setProduct(cur-1,-1)" aria-label="Trước"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+          <button class="nb absolute right-[-14px] md:right-[-34px] top-1/2 bg-white/60" style="color:var(--green);--hc:#1f3d2b" onclick="setProduct(cur+1,1)" aria-label="Sau"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
+        </div>
+      </div>
+      <div class="relative z-10" style="color:var(--green)">
+        <div class="eyebrow mb-3" style="color:var(--terra)" data-a style="--d:100">Bộ sưu tập <span id="pIdx" class="ml-1 opacity-70">01/04</span></div>
+        <div id="info">
+          <div class="inline-block text-[.7rem] font-semibold px-3 py-1 rounded-full mb-2" id="pBadge" style="background:var(--terra);color:#fff"></div>
+          <h2 class="fd font-bold leading-[1.05]" style="font-size:clamp(1.9rem,4.2vw,3.4rem)" id="pName"></h2>
+          <p class="mt-3 max-w-md text-[.93rem] leading-relaxed" style="color:#4a5744" id="pDesc"></p>
+          <div class="mt-3 flex flex-wrap gap-2" id="pTags"></div>
+          <div class="mt-4 flex items-center gap-3"><span class="text-xs font-semibold tracking-wide uppercase opacity-70">Màu quai lụa</span><div class="flex gap-2" id="pSw"></div></div>
+          <div class="mt-4 fd text-3xl font-bold" id="pPrice" style="color:var(--terra)"></div>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-3" data-a style="--d:300">
+          <button class="btn btn-p" onclick="addCart(false)">Thêm vào giỏ</button>
+          <button class="btn btn-g" onclick="addCart(true)">Đặt ngay</button>
+        </div>
+        <div class="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-2" id="chips" data-a style="--d:400"></div>
+        <p class="mt-3 text-[.7rem] opacity-60 md:hidden">↔ Vuốt ngang để đổi mẫu nón</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 PROCESS -->
+<section class="slide" data-theme="dark" data-title="Quy trình" style="background:radial-gradient(ellipse at 80% 0%,#4a2e1a 0%,#24170f 60%,#170e08 100%);z-index:4;color:#f6ecd6">
+  <div class="inner">
+    <div class="wrap">
+      <div class="eyebrow mb-3" style="color:var(--straw)" data-a style="--d:0">Quy trình thủ công</div>
+      <h2 class="fd font-bold leading-[1.05] max-w-2xl" style="font-size:clamp(2rem,4.8vw,3.8rem)" data-a style="--d:100">Từ chiếc lá đến <em style="color:var(--straw)">chiếc nón</em></h2>
+      <div class="line hidden md:block h-px mt-8 mb-6" style="background:linear-gradient(90deg,var(--straw),transparent)"></div>
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-3 md:gap-4 mt-6 md:mt-0" id="steps"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 TESTIMONIALS -->
+<section class="slide" data-theme="light" data-title="Khách hàng" style="background:linear-gradient(200deg,#f9eed2,#efd9a3);z-index:5">
+  <div class="bgword" style="font-size:36vw;color:rgba(181,68,42,.06)">“</div>
+  <div class="inner">
+    <div class="wrap grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+      <div class="order-2 md:order-1" style="color:var(--green)">
+        <div class="eyebrow mb-4" style="color:var(--terra)" data-a style="--d:0">Khách hàng nói gì</div>
+        <div class="text-xl mb-3" style="color:#e29a1f;letter-spacing:.2em" data-a style="--d:100">★★★★★</div>
+        <div id="qBox" class="qfade" style="min-height:190px">
+          <p id="qText" class="fd italic leading-snug" style="font-size:clamp(1.3rem,2.7vw,2.1rem)"></p>
+          <div class="mt-5"><div class="font-semibold" id="qName"></div><div class="text-sm opacity-65" id="qWhere"></div></div>
+        </div>
+        <div class="flex items-center gap-3 mt-4" data-a style="--d:300">
+          <div class="flex gap-2" id="qDots"></div>
+          <span class="text-xs opacity-60 ml-2">Chạm vào ảnh để xem tiếp</span>
+        </div>
+      </div>
+      <div class="order-1 md:order-2 grid place-items-center">
+        <div id="stack" class="relative" style="width:min(58vw,40vh,300px);aspect-ratio:3/4" data-a="zoom" style="--d:100"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 ORDER -->
+<section class="slide" data-theme="dark" data-title="Đặt hàng" style="background:linear-gradient(150deg,#9a3420 0%,#6d2113 55%,#3d120a 100%);z-index:6;color:#f6ecd6">
+  <div class="absolute pointer-events-none" id="bgHat" style="right:-12vw;bottom:-14vh;width:min(80vw,80vh);opacity:.1;animation:float 9s ease-in-out infinite"></div>
+  <div class="inner">
+    <div class="wrap grid lg:grid-cols-2 gap-8 lg:gap-14 items-center">
+      <div>
+        <div class="eyebrow mb-4" style="color:var(--straw)" data-a style="--d:0">Đặt hàng</div>
+        <h2 class="fd font-bold leading-[1.02]" style="font-size:clamp(2.1rem,5.2vw,4.4rem)" data-a style="--d:100">Đội nón Việt,<br><em style="color:var(--straw)">mang hồn quê</em> đi xa</h2>
+        <p class="mt-4 max-w-md leading-relaxed text-[.95rem]" style="color:rgba(246,236,214,.8)" data-a style="--d:200">Giao hàng toàn quốc, đóng gói chống móp. Miễn phí vận chuyển cho đơn từ 300.000₫ và đổi trả trong 7 ngày.</p>
+        <div class="mt-6 grid gap-3 text-sm" data-a style="--d:300">
+          <div class="flex items-center gap-3"><span class="grid place-items-center w-9 h-9 rounded-full bg-white/10">📍</span>12 Lê Lợi, TP. Huế · Làng nón Tây Hồ</div>
+          <div class="flex items-center gap-3"><span class="grid place-items-center w-9 h-9 rounded-full bg-white/10">📞</span>0900 123 456 · Zalo / Messenger</div>
+          <div class="flex items-center gap-3"><span class="grid place-items-center w-9 h-9 rounded-full bg-white/10">🕗</span>Mở cửa 8:00 – 21:00 mỗi ngày</div>
+        </div>
+      </div>
+      <div class="rounded-[28px] p-6 md:p-8 relative" style="background:#fbf3df;color:var(--ink);box-shadow:0 40px 80px -30px rgba(0,0,0,.6)" data-a="right" style="--d:250">
+        <form id="orderForm" novalidate>
+          <h3 class="fd text-2xl font-bold mb-1">Đơn hàng của bạn</h3>
+          <div id="cartLines" class="my-3"></div>
+          <input class="fi" id="fName" placeholder="Họ và tên" autocomplete="name">
+          <input class="fi" id="fPhone" placeholder="Số điện thoại" inputmode="tel" autocomplete="tel">
+          <input class="fi" id="fAddr" placeholder="Địa chỉ nhận hàng" autocomplete="street-address">
+          <p id="fErr" class="text-xs mt-2 min-h-4" style="color:var(--terra)"></p>
+          <button type="submit" class="btn btn-p w-full justify-center mt-3">Gửi đơn đặt hàng</button>
+        </form>
+        <div id="okBox" class="hidden text-center py-8">
+          <div class="okpop mx-auto w-20 h-20 rounded-full grid place-items-center text-4xl" style="background:var(--green);color:#f6ecd6">✓</div>
+          <h3 class="fd text-2xl font-bold mt-5">Cảm ơn bạn!</h3>
+          <p class="text-sm mt-2 opacity-75">Nón Lá Xưa sẽ gọi xác nhận đơn trong vòng 30 phút.</p>
+          <button class="btn btn-g mt-5" onclick="resetOrder()">Đặt thêm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="absolute bottom-3 inset-x-0 text-center text-[.68rem] tracking-widest opacity-50 pointer-events-none z-10 hidden md:block">© 2026 NÓN LÁ XƯA · LÀM BẰNG TAY, GỬI BẰNG TÂM</div>
+</section>
+
+</main>
+
+<script>
+/* ---------- HAT SVG ---------- */
+function hatSVG(o,id){
+  const cx=200,ay=36,by=244,R=186,ry=44,[s1,s2,s3]=o.straw,st=o.strap;
+  const Y=(t,dx=0)=>ay+(by-ay)*t+ry*t*Math.sqrt(Math.max(0,1-Math.pow(dx/(R*t),2)));
+  let weave='';
+  for(let k=1;k<=14;k++){const t=k/15,y=ay+(by-ay)*t,w=R*t,e=ry*t;
+    weave+=`<path d="M${cx-w} ${y} A${w} ${e} 0 0 0 ${cx+w} ${y}" fill="none" stroke="#6b4a1a" stroke-opacity=".26" stroke-width="1.2"/>`;
+    weave+=`<path d="M${cx-w} ${y+1.6} A${w} ${e} 0 0 0 ${cx+w} ${y+1.6}" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="1"/>`;}
+  let ribs='';
+  for(let k=0;k<=26;k++){const a=Math.PI*k/26;ribs+=`<line x1="${cx}" y1="${ay}" x2="${(cx+R*Math.cos(a)).toFixed(1)}" y2="${(by+ry*Math.sin(a)).toFixed(1)}" stroke="#6b4a1a" stroke-opacity=".11"/>`;}
+  const arc=(t,extra='')=>{const w=R*t,y=ay+(by-ay)*t,e=ry*t;return `<path d="M${cx-w} ${y} A${w} ${e} 0 0 0 ${cx+w} ${y}" fill="none" ${extra}/>`};
+  let deco='';
+  if(o.deco==='poem'){
+    [.5,.6,.7,.8].forEach((t,i)=>{deco+=arc(t+.025,`stroke="#4a3210" stroke-opacity=".55" stroke-width="1.8" stroke-dasharray="${i%2?'2 4 7 3 1 5':'5 3 1 6 4 3'}"`)});
+    deco+=`<circle cx="${cx}" cy="${Y(.36)-6}" r="9" fill="#c0392b" fill-opacity=".85"/><path d="M${cx-34} ${Y(.38,-34)+8} q12 -8 22 0 t22 0 t22 0 t22 0" stroke="#2f5d8a" stroke-width="2" fill="none" opacity=".75"/>`;
+  }
+  if(o.deco==='lotus'){
+    const flower=(dx,t,s)=>{const x=cx+dx,y=Y(t,dx);let p='';
+      [-62,-31,31,62,0].forEach(r=>{p+=`<ellipse cx="${x}" cy="${y-9*s}" rx="${4.6*s}" ry="${10*s}" transform="rotate(${r} ${x} ${y})" fill="${st}" fill-opacity="${r===0?1:.82}" stroke="#fff" stroke-opacity=".6" stroke-width=".6"/>`});
+      return `<g>${[-1,1].map(d=>`<ellipse cx="${x+d*15*s}" cy="${y+1}" rx="${11*s}" ry="${4*s}" transform="rotate(${d*-14} ${x+d*15*s} ${y+1})" fill="#4c8a4f" opacity=".9"/>`).join('')}${p}<circle cx="${x}" cy="${y-3*s}" r="${2.2*s}" fill="#ffd86b"/></g>`};
+    deco+=flower(-82,.78,1)+flower(82,.78,1)+flower(0,.86,1.15)+flower(-38,.58,.7)+flower(38,.58,.7);
+  }
+  if(o.deco==='band'){
+    deco+=arc(.92,`stroke="${st}" stroke-width="8"`)+arc(.86,`stroke="#e5b93c" stroke-width="3"`)+arc(.97,`stroke="#e5b93c" stroke-width="2" stroke-dasharray="1 7" stroke-linecap="round"`);
+    for(let k=-4;k<=4;k++){const dx=k*38,t=.77;deco+=`<path d="M${cx+dx} ${Y(t,dx)-7} l6 7 l-6 7 l-6 -7z" fill="${st}" stroke="#e5b93c" stroke-width="1"/>`}
+  }
+  if(o.deco==='plain'){deco+=arc(.97,`stroke="#6b4a1a" stroke-opacity=".35" stroke-width="1.5" stroke-dasharray="2 5" stroke-linecap="round"`)}
+  const body=`M${cx} ${ay} L${cx-R} ${by} A${R} ${ry} 0 0 0 ${cx+R} ${by} Z`;
+  return `<svg viewBox="0 0 400 402" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;overflow:visible">
+  <defs>
+   <linearGradient id="g${id}" x1="0" x2="1"><stop offset="0" stop-color="${s1}"/><stop offset=".48" stop-color="${s2}"/><stop offset="1" stop-color="${s3}"/></linearGradient>
+   <radialGradient id="r${id}" cx=".34" cy=".38" r=".6"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+   <radialGradient id="s${id}"><stop offset="0" stop-color="#000" stop-opacity=".28"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+   <clipPath id="c${id}"><path d="${body}"/></clipPath>
+  </defs>
+  <ellipse cx="200" cy="394" rx="150" ry="8" fill="url(#s${id})"/>
+  <path d="${body}" fill="url(#g${id})"/>
+  <g clip-path="url(#c${id})">${weave}${ribs}${deco}<path d="${body}" fill="url(#r${id})"/></g>
+  <path d="M${cx-R} ${by} A${R} ${ry} 0 0 0 ${cx+R} ${by}" fill="none" stroke="${s3}" stroke-width="5" stroke-linecap="round"/>
+  <path d="M${cx-R+8} ${by+1} A${R-8} ${ry-2} 0 0 0 ${cx+R-8} ${by+1}" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="1.4"/>
+  <path d="M${cx} ${ay} q-7 -10 0 -22 q7 12 0 22z" fill="${s3}"/>
+  <g stroke="${st}" stroke-width="6" stroke-linecap="round" fill="none"><path d="M52 270C72 334 140 344 188 336"/><path d="M348 270C328 334 260 344 212 336"/></g>
+  <g fill="${st}"><path d="M200 336C172 312 158 342 176 354C190 360 198 346 200 336z"/><path d="M200 336C228 312 242 342 224 354C210 360 202 346 200 336z"/></g>
+  <g stroke="${st}" stroke-width="5" stroke-linecap="round" fill="none"><path d="M196 340C190 362 180 374 168 384"/><path d="M204 340C210 362 220 374 232 384"/></g>
+  <circle cx="200" cy="338" r="5.5" fill="#000" fill-opacity=".28"/>
+  </svg>`;
+}
+
+/* ---------- DATA ---------- */
+const P=[
+ {n:'Nón Lá Truyền Thống',p:85000,b:'Bán chạy',d:'Lá cọ non phơi sương, 16 vành tre vót tay. Nhẹ như gió, bền qua bao mùa nắng mưa — chiếc nón của mọi nhà.',tags:['Lá cọ non','16 vành tre','Nhẹ 120g'],deco:'plain',straw:['#f3dc96','#e3bd6c','#b58838'],straps:[['Nâu đất','#8a4b2a'],['Đỏ son','#c0392b'],['Xanh ngọc','#2f7a68'],['Vàng nghệ','#e8a33d']]},
+ {n:'Nón Bài Thơ Xứ Huế',p:165000,b:'Đặc sản Huế',d:'Hai lớp lá mỏng ép khéo léo, soi lên nắng hiện hình cảnh sắc và câu thơ lục bát lặng lẽ giữa nền lá.',tags:['Hai lớp lá','Hình ẩn','Quai lụa'],deco:'poem',straw:['#f9ecc8','#eed49c','#cba760'],straps:[['Xanh biển','#4f86b8'],['Hồng phấn','#d98ca0'],['Xanh lá','#6aa38f']]},
+ {n:'Nón Vẽ Sen Hồng',p:245000,b:'Mới ra mắt',d:'Hoạ tiết sen vẽ tay bằng màu khoáng tự nhiên, mỗi chiếc là một tác phẩm duy nhất. Món quà tặng đậm chất Việt.',tags:['Vẽ tay','Màu khoáng','Độc bản'],deco:'lotus',straw:['#f6e3ac','#e9c883','#c19a4c'],straps:[['Hồng sen','#e1668a'],['Tím huế','#7a5aa6'],['Cam đất','#d9783a']]},
+ {n:'Nón Quai Thao Hoàng Cung',p:195000,b:'Cao cấp',d:'Dáng nón cung đình với dải thao quai mềm mại và hoạ tiết kim tuyến, tôn nét dịu dàng khi diện áo dài.',tags:['Quai thao','Viền kim tuyến','Áo dài'],deco:'band',straw:['#ecca7c','#d6a853','#a97c32'],straps:[['Đỏ đô','#b3202a'],['Xanh rêu','#245a3b'],['Tím than','#3b3a7a']]}
+];
+const STEPS=[
+ ['🌿','Hái lá & phơi sương','Chọn lá cọ non, phơi sương đêm rồi phơi nắng nhẹ cho lá giữ màu xanh ngà.','2 ngày'],
+ ['♨️','Ủi lá phẳng mịn','Lá được hơ than hồng, ủi phẳng bằng tay để mặt lá bóng và không giòn gãy.','4 giờ'],
+ ['🎋','Uốn vành, dựng khung','Tre già chẻ mỏng, vót tròn và uốn thành 16 vành lớn dần theo hình chóp.','1 ngày'],
+ ['🧵','Chằm nón từng mũi','Ngồi chằm từng mũi chỉ tơ nhỏ đều, vừa chắc vừa kín để nón mềm mà không xệ.','1–2 ngày'],
+ ['✨','Quét dầu & gắn quai','Phủ lớp dầu bóng chống nước, gắn quai lụa và hoạ tiết hoàn thiện chiếc nón.','nửa ngày']
+];
+const T=[
+ {q:'Nón nhẹ tênh, quai lụa mềm. Đội đi chụp ảnh áo dài ở phố cổ ai cũng hỏi mua ở đâu.',n:'Thu Hà',w:'Hà Nội · Nón Quai Thao',img:'31204939',cap:'Áo dài & Nón quai thao'},
+ {q:'Mẫu nón vẽ sen đẹp như một món quà nghệ thuật. Mình đã đặt thêm 5 chiếc tặng bạn bè nước ngoài.',n:'Minh Châu',w:'Đà Nẵng · Nón Vẽ Sen',img:'30292693',cap:'Nón vẽ sen hồng'},
+ {q:'Đóng gói cẩn thận, giao vào Sài Gòn không móp méo. Vành đều, lá khít — đúng chất nón làng nghề.',n:'Ngọc Anh',w:'TP.HCM · Nón Truyền Thống',img:'11167437',cap:'Sắc vàng dưới nắng'},
+ {q:'Chiếc nón bài thơ làm mình nhớ bà ngoại ở Huế. Chỉ mua một lần mà mê luôn.',n:'Khánh Linh',w:'Huế · Nón Bài Thơ',img:'32974509',cap:'Nét duyên xứ Huế'}
+];
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const fmt=n=>n.toLocaleString('vi-VN')+'₫';
+
+/* ---------- STATIC RENDER ---------- */
+$('#logoHat').innerHTML=hatSVG({straw:P[0].straw,strap:'#b5442a',deco:'plain'},'lg');
+$('#heroHatIn').innerHTML=hatSVG({straw:['#f6dd95','#e6bf6e','#b88a3a'],strap:'#b3202a',deco:'band'},'hero');
+$('#bgHat').innerHTML=hatSVG({straw:['#fff','#fff','#fff'],strap:'#fff',deco:'band'},'bg');
+$('#steps').innerHTML=STEPS.map((s,i)=>`
+ <div data-a style="--d:${300+i*130}"><div class="pc flex md:block gap-4 items-start">
+  <div class="pnum shrink-0">0${i+1}</div>
+  <div><div class="text-2xl md:mt-3">${s[0]}</div><h3 class="fd text-lg md:text-xl font-bold mt-1" style="color:var(--straw)">${s[1]}</h3>
+  <p class="text-[.82rem] leading-relaxed mt-1.5 opacity-75">${s[2]}</p>
+  <span class="inline-block mt-2 text-[.7rem] px-2.5 py-1 rounded-full" style="background:rgba(227,184,101,.15);color:var(--straw)">⏱ ${s[3]}</span></div>
+ </div></div>`).join('');
+$('#hint').textContent=matchMedia('(pointer:coarse)').matches?'Vuốt lên để khám phá':'Cuộn · Kéo · Phím mũi tên';
+
+/* leaves */
+$('#leaves').innerHTML=Array.from({length:14},()=>`<span class="leaf" style="left:${Math.random()*100}%;animation-duration:${9+Math.random()*10}s;animation-delay:${-Math.random()*16}s;transform:scale(${.6+Math.random()*.9})"></span>`).join('');
+
+/* ---------- NAVIGATION ---------- */
+const slides=$$('.slide'),N=slides.length,state={i:0,busy:false};
+let suppress=false;
+$('#dots').innerHTML=slides.map((s,i)=>`<button class="dot" data-i="${i}" aria-label="${s.dataset.title}"><span>${s.dataset.title}</span></button>`).join('');
+$$('.dot').forEach(d=>d.addEventListener('click',()=>go(+d.dataset.i)));
+$$('[data-go]').forEach(b=>b.addEventListener('click',()=>go(+b.dataset.go)));
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+function render(prev){
+  const c=state.i,first=prev==null;
+  slides.forEach((s,i)=>{
+    const involved=!first&&(i===c||i===prev||(prev===c&&Math.abs(i-c)<=1));
+    s.classList.remove('drag');
+    s.style.transition=involved?'':'none';
+    s.style.visibility=(i===c||involved)?'visible':'hidden';
+    s.style.transform=`translate3d(0,${i<c?'-20%':i>c?'100%':'0'},0)`;
+    s.style.setProperty('--shade',i<c?.6:0);
+    if(i===c){clearTimeout(s._t);if(first)setTimeout(()=>s.classList.add('active'),150);else s.classList.add('active')}
+    else if(s.classList.contains('active')){clearTimeout(s._t);s._t=setTimeout(()=>s.classList.remove('active'),1050)}
+  });
+  document.body.dataset.theme=slides[c].dataset.theme;
+  $$('.dot').forEach((d,i)=>d.classList.toggle('on',i===c));
+  $$('.navlink').forEach(b=>b.classList.toggle('on',+b.dataset.go===c));
+  $('#cNow').textContent=String(c+1).padStart(2,'0');
+  $('#cTitle').textContent=slides[c].dataset.title;
+  $('#cBar').style.transform=`scaleX(${(c+1)/N})`;
+  clearTimeout(render._t);
+  render._t=setTimeout(()=>slides.forEach((s,i)=>{if(i!==state.i)s.style.visibility='hidden'}),1000);
+  if(prev!==c)onEnter(c);
+}
+function go(n){
+  n=clamp(n,0,N-1);
+  if(n===state.i||state.busy)return;
+  const prev=state.i;state.i=n;state.busy=true;
+  render(prev);
+  setTimeout(()=>{state.busy=false},900);
+}
+function onEnter(c){
+  if(c===1)setTimeout(()=>$$('[data-count]').forEach(countUp),900);
+  if(c===4)startStack();else stopStack();
+}
+function countUp(el){
+  const to=+el.dataset.count,t0=performance.now(),dur=1600;
+  (function step(t){const p=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-p,4);el.textContent=Math.round(to*e).toLocaleString('vi-VN');if(p<1)requestAnimationFrame(step)})(t0);
+}
+function edgeOK(dir){
+  const s=slides[state.i].querySelector('.inner');
+  return dir>0?s.scrollTop+s.clientHeight>=s.scrollHeight-3:s.scrollTop<=2;
+}
+function setSlide(i,y,sh){const s=slides[i];s.style.visibility='visible';s.style.transform=`translate3d(0,${y}px,0)`;s.style.setProperty('--shade',sh)}
+function drag(dy){
+  const H=innerHeight,c=state.i,p=Math.min(1,Math.abs(dy)/H);
+  slides.forEach(s=>{s.style.transition='none';s.classList.add('drag')});
+  if(dy<0&&c<N-1){setSlide(c,dy*.2,p*.6);setSlide(c+1,H+dy,0)}
+  else if(dy>0&&c>0){setSlide(c,dy,0);setSlide(c-1,-.2*H+dy*.2,.6*(1-p))}
+  else setSlide(c,dy*.2,0);
+}
+
+/* wheel */
+let lastT=0,lastD=0;
+window.addEventListener('wheel',e=>{
+  e.preventDefault();
+  let d=e.deltaY;if(e.deltaMode===1)d*=16;
+  if(Math.abs(d)<2&&Math.abs(e.deltaX)>2)return;
+  const dir=d>0?1:-1,now=performance.now(),abs=Math.abs(d);
+  const inner=slides[state.i].querySelector('.inner');
+  if(!edgeOK(dir)){inner.scrollTop+=d;lastT=now;lastD=abs;return}
+  const streaming=now-lastT<110&&abs<=lastD+2;
+  lastT=now;lastD=abs;
+  if(state.busy||streaming||abs<6)return;
+  go(state.i+dir);
+},{passive:false});
+
+/* keyboard */
+window.addEventListener('keydown',e=>{
+  if(e.target.closest&&e.target.closest('input,select,textarea'))return;
+  if(['ArrowDown','PageDown'].includes(e.key)||(e.key===' '&&!e.shiftKey)){e.preventDefault();go(state.i+1)}
+  else if(['ArrowUp','PageUp'].includes(e.key)||(e.key===' '&&e.shiftKey)){e.preventDefault();go(state.i-1)}
+  else if(e.key==='Home')go(0);else if(e.key==='End')go(N-1);
+  else if(state.i===2&&e.key==='ArrowRight')setProduct(cur+1,1);
+  else if(state.i===2&&e.key==='ArrowLeft')setProduct(cur-1,-1);
+});
+
+/* pointer drag (touch + mouse) */
+let G={on:false};
+function gStart(x,y,type){G={on:true,mode:null,x,y,t:performance.now(),type,dx:0,dy:0,moved:false}}
+function gMove(x,y,e){
+  if(!G.on)return;
+  const dx=x-G.x,dy=y-G.y;G.dx=dx;G.dy=dy;
+  if(!G.mode){
+    if(Math.abs(dx)<5&&Math.abs(dy)<5)return;
+    if(Math.abs(dx)>Math.abs(dy)*1.2)G.mode='h';
+    else if(state.busy)G.mode='none';
+    else{const dir=dy<0?1:-1;G.mode=edgeOK(dir)?'v':(G.type==='touch'?'scroll':'none')}
+  }
+  if(G.mode==='v'){if(e.cancelable)e.preventDefault();drag(dy);G.moved=true}
+  else if(G.mode==='h'){if(e.cancelable&&G.type==='touch')e.preventDefault();G.moved=true}
+}
+function gEnd(){
+  if(!G.on)return;G.on=false;
+  const {mode,dx,dy}=G,dt=Math.max(1,performance.now()-G.t);
+  if(G.moved&&G.type==='mouse'){suppress=true;setTimeout(()=>suppress=false,0)}
+  if(mode==='v'){
+    const dir=dy<0?1:-1,v=Math.abs(dy)/dt,t=state.i+dir;
+    const ok=Math.abs(dy)>innerHeight*.14||(v>.4&&Math.abs(dy)>30);
+    if(ok&&t>=0&&t<N)go(t);else render(state.i);
+  }else if(mode==='h'&&state.i===2&&Math.abs(dx)>40){setProduct(cur+(dx<0?1:-1),dx<0?1:-1)}
+}
+const isField=t=>t.closest&&t.closest('input,select,textarea');
+window.addEventListener('touchstart',e=>{if(isField(e.target)){G.on=false;return}const t=e.touches[0];gStart(t.clientX,t.clientY,'touch')},{passive:true});
+window.addEventListener('touchmove',e=>{const t=e.touches[0];gMove(t.clientX,t.clientY,e)},{passive:false});
+window.addEventListener('touchend',gEnd);window.addEventListener('touchcancel',gEnd);
+window.addEventListener('mousedown',e=>{if(e.button!==0||isField(e.target))return;gStart(e.clientX,e.clientY,'mouse')});
+window.addEventListener('mousemove',e=>{gMove(e.clientX,e.clientY,e);
+  if(state.i===0&&!G.on){const h=$('#heroHat');h.style.setProperty('--mx',(e.clientX/innerWidth-.5)*2);h.style.setProperty('--my',(e.clientY/innerHeight-.5)*2)}});
+window.addEventListener('mouseup',gEnd);
+window.addEventListener('click',e=>{if(suppress){e.stopPropagation();e.preventDefault();suppress=false}},true);
+window.addEventListener('dragstart',e=>e.preventDefault());
+window.addEventListener('resize',()=>render(state.i));
+
+/* ---------- PRODUCTS ---------- */
+let cur=0;const strapSel=P.map(()=>0);
+const hatBox=$('#hatBox');
+$('#chips').innerHTML=P.map((p,i)=>`<button class="chip" data-i="${i}"><span class="block w-11 shrink-0">${hatSVG({straw:p.straw,strap:p.straps[0][1],deco:p.deco},'ch'+i)}</span><span class="text-[.7rem] font-semibold leading-tight">${p.n.replace('Nón ','')}</span></button>`).join('');
+$$('.chip').forEach(c=>c.addEventListener('click',()=>{const n=+c.dataset.i;if(n!==cur)setProduct(n,n>cur?1:-1)}));
+function paint(){
+  const p=P[cur];
+  hatBox.innerHTML=`<div class="float">${hatSVG({straw:p.straw,strap:p.straps[strapSel[cur]][1],deco:p.deco},'m'+Math.random().toString(36).slice(2,6))}</div>`;
+  $('#pName').textContent=p.n;$('#pDesc').textContent=p.d;$('#pBadge').textContent=p.b;$('#pPrice').textContent=fmt(p.p);
+  $('#pIdx').textContent=`0${cur+1}/0${P.length}`;
+  $('#pTags').innerHTML=p.tags.map(t=>`<span class="tagp">${t}</span>`).join('');
+  $('#pSw').innerHTML=p.straps.map((s,i)=>`<button class="sw ${i===strapSel[cur]?'on':''}" style="background:${s[1]}" title="${s[0]}" data-s="${i}"></button>`).join('');
+  $$('#pSw .sw').forEach(b=>b.addEventListener('click',()=>{strapSel[cur]=+b.dataset.s;paint();hatBox.animate([{transform:'scale(.94) rotate(-3deg)'},{transform:'scale(1)'}],{duration:400,easing:'cubic-bezier(.2,1.4,.3,1)'})}));
+  $$('.chip').forEach((c,i)=>c.classList.toggle('on',i===cur));
+}
+function setProduct(n,dir=1,first=false){
+  n=(n+P.length)%P.length;
+  if(first){cur=n;paint();return}
+  if(setProduct.busy)return;setProduct.busy=true;
+  hatBox.animate([{transform:'rotateY(0) scale(1)',opacity:1},{transform:`rotateY(${90*dir}deg) scale(.8)`,opacity:0}],{duration:260,easing:'ease-in'}).onfinish=()=>{
+    cur=n;paint();
+    hatBox.animate([{transform:`rotateY(${-90*dir}deg) scale(.8)`,opacity:0},{transform:'rotateY(0) scale(1)',opacity:1}],{duration:420,easing:'cubic-bezier(.2,.8,.2,1)'}).onfinish=()=>setProduct.busy=false;
+  };
+  $('#info').animate([{opacity:1,transform:'translateY(0)'},{opacity:0,transform:`translateY(${10*dir}px)`},{opacity:1,transform:'translateY(0)'}],{duration:700,easing:'ease'});
+}
+setProduct(0,1,true);
+
+/* ---------- CART ---------- */
+const cart=new Map();
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),2400)}
+function addCart(order){
+  const sk=strapSel[cur],key=cur+'|'+sk;
+  const it=cart.get(key)||{i:cur,s:sk,q:0};it.q++;cart.set(key,it);
+  renderCart();
+  const b=$('#badge');b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop');
+  if(order){go(5)}else toast(`Đã thêm “${P[cur].n}” vào giỏ hàng`);
+}
+function renderCart(){
+  let count=0,total=0;cart.forEach(it=>{count+=it.q;total+=it.q*P[it.i].p});
+  const b=$('#badge');b.style.display=count?'grid':'none';b.textContent=count;
+  const box=$('#cartLines');
+  if(!count){box.innerHTML=`<div class="text-sm py-5 text-center rounded-2xl" style="background:rgba(36,23,15,.05)">Giỏ hàng đang trống.<br><button type="button" class="underline font-semibold mt-1" style="color:var(--terra);background:none;border:0" onclick="go(2)">Chọn mẫu nón yêu thích →</button></div>`;return}
+  box.innerHTML=[...cart.entries()].map(([k,it])=>{const p=P[it.i];return `<div class="flex items-center gap-3 py-2 border-b" style="border-color:rgba(36,23,15,.1)">
+    <span class="w-10 shrink-0">${hatSVG({straw:p.straw,strap:p.straps[it.s][1],deco:p.deco},'cl'+k.replace('|',''))}</span>
+    <div class="flex-1 min-w-0"><div class="text-[.85rem] font-semibold truncate">${p.n}</div><div class="text-[.7rem] opacity-60">Quai ${p.straps[it.s][0].toLowerCase()} · ${fmt(p.p)}</div></div>
+    <div class="flex items-center gap-2"><button type="button" class="qbtn" onclick="qty('${k}',-1)">−</button><span class="text-sm w-4 text-center">${it.q}</span><button type="button" class="qbtn" onclick="qty('${k}',1)">+</button></div></div>`}).join('')
+    +`<div class="flex justify-between items-baseline pt-3"><span class="text-sm opacity-70">Tạm tính</span><span class="fd text-2xl font-bold" style="color:var(--terra)">${fmt(total)}</span></div>`;
+}
+function qty(k,d){const it=cart.get(k);if(!it)return;it.q+=d;if(it.q<=0)cart.delete(k);renderCart()}
+renderCart();
+$('#orderForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const n=$('#fName').value.trim(),ph=$('#fPhone').value.replace(/\s|\./g,''),ad=$('#fAddr').value.trim(),er=$('#fErr');
+  if(!cart.size){er.textContent='Hãy chọn ít nhất 1 chiếc nón trong bộ sưu tập.';return}
+  if(n.length<2){er.textContent='Vui lòng nhập họ tên của bạn.';return}
+  if(!/^(0|\+84)\d{8,10}$/.test(ph)){er.textContent='Số điện thoại chưa đúng, vui lòng kiểm tra lại.';return}
+  if(ad.length<5){er.textContent='Vui lòng nhập địa chỉ nhận hàng.';return}
+  er.textContent='';$('#orderForm').classList.add('hidden');$('#okBox').classList.remove('hidden');
+  cart.clear();renderCart();
+});
+function resetOrder(){$('#orderForm').reset();$('#orderForm').classList.remove('hidden');$('#okBox').classList.add('hidden')}
+
+/* ---------- TESTIMONIAL STACK ---------- */
+const stack=$('#stack');let topI=0,stackTimer=null,anim=false;
+stack.innerHTML=T.map((t,i)=>`<div class="card" data-i="${i}"><img draggable="false" loading="lazy" alt="${t.cap}" src="https://images.pexels.com/photos/${t.img}/pexels-photo-${t.img}.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=800&w=600"><div class="cap">${t.cap}</div></div>`).join('');
+$('#qDots').innerHTML=T.map((_,i)=>`<button class="h-1.5 rounded-full transition-all duration-500" data-i="${i}" style="background:var(--green);border:0;padding:0"></button>`).join('');
+const cards=$$('#stack .card');
+const POS=[
+ 'translate(0,0) rotate(0deg) scale(1)',
+ 'translate(13%,4%) rotate(6deg) scale(.95)',
+ 'translate(-13%,7%) rotate(-7deg) scale(.9)',
+ 'translate(2%,-4%) rotate(3deg) scale(.86)'
+];
+function layout(){
+  cards.forEach((c,i)=>{const p=(i-topI+T.length)%T.length;c.style.transform=POS[p];c.style.zIndex=10-p;c.style.opacity=p===3?.75:1});
+  $$('#qDots button').forEach((d,i)=>{d.style.width=i===topI?'30px':'8px';d.style.opacity=i===topI?1:.35});
+}
+function quote(){
+  const b=$('#qBox');b.classList.add('out');
+  setTimeout(()=>{const t=T[topI];$('#qText').textContent='“'+t.q+'”';$('#qName').textContent=t.n;$('#qWhere').textContent=t.w;b.classList.remove('out')},350);
+}
+function nextCard(to){
+  if(anim)return;anim=true;
+  const out=cards[topI];
+  out.style.transform='translate(130%,-12%) rotate(24deg) scale(1)';out.style.opacity=0;
+  setTimeout(()=>{topI=to==null?(topI+1)%T.length:to;layout();quote();anim=false},420);
+}
+stack.addEventListener('click',()=>nextCard());
+$$('#qDots button').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const n=+b.dataset.i;if(n===topI)return;nextCard(n)}));
+function startStack(){stopStack();stackTimer=setInterval(()=>nextCard(),5600)}
+function stopStack(){clearInterval(stackTimer)}
+layout();
+(function(){const t=T[0];$('#qText').textContent='“'+t.q+'”';$('#qName').textContent=t.n;$('#qWhere').textContent=t.w})();
+
+/* ---------- INIT ---------- */
+slides.forEach(s=>s.querySelectorAll('[data-a]').forEach((el,i)=>{if(!el.style.getPropertyValue('--d'))el.style.setProperty('--d',i*110)}));
+render(null);
+</script>
+</body>
+</html>
