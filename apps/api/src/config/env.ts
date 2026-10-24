@@ -28,6 +28,8 @@ const baseSchema = z.object({
     .transform((v) => v === 'true'),
   /** 32 bytes, base64. Encrypts TOTP secrets at rest. */
   MFA_ENCRYPTION_KEY: z.string().optional(),
+  /** Reverse proxies in front of the API (each one appends to X-Forwarded-For). Direct = 0, one proxy = 1, Vercel rewrite + a host proxy (Railway, Cloudflare, Nginx) = 2. Wrong values break per-IP rate limits. */
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
   /** 'simulator' prints OTP codes instead of sending them (development only); 'zalo' sends through Zalo ZNS (worker). */
   SMS_MODE: z.enum(['simulator', 'zalo']).default('simulator'),
   /** Keys the hash of one-time codes. Required in production (>= 24 chars). */

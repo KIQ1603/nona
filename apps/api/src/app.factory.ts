@@ -15,7 +15,7 @@ export async function createApp(): Promise<NestExpressApplication> {
     logger: env.NODE_ENV === 'test' ? false : undefined,
   });
   app.disable('x-powered-by');
-  app.set('trust proxy', 1);
+  app.set('trust proxy', env.TRUST_PROXY_HOPS);
   app.use(requestContext);
   app.use(helmet());
   app.use(cookieParser());
