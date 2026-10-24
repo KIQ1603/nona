@@ -8,3 +8,4 @@ coverage
 .DS_Store
 backups/
 .zalo-pkce.json
+.env.render
