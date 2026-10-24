@@ -1,5 +1,9 @@
 import { Body, Controller, Delete, Get, HttpCode, Inject, Post } from '@nestjs/common';
-import { phoneOtpRequestSchema, phoneOtpVerifySchema } from '@nona/contracts';
+import {
+  firebaseIdTokenSchema,
+  phoneOtpRequestSchema,
+  phoneOtpVerifySchema,
+} from '@nona/contracts';
 import type { AuthContext } from '../../../common/auth/auth.types';
 import { Authenticated, CurrentAuth, RequestId } from '../../../common/auth/decorators';
 import { parseInput } from '../../../common/http/parse';
@@ -36,6 +40,26 @@ export class PhoneController {
       .verify({ userId: auth.userId }, parseInput(phoneOtpVerifySchema, body).code, 'ACCOUNT', {
         requestId: rid,
       })
+      .then(({ phone, verified }) => ({ phone, verified }));
+  }
+
+  /** Firebase Phone Auth: the browser sends the ID token it got after the person typed the SMS code. */
+  @Post('firebase')
+  @HttpCode(200)
+  verifyFirebase(
+    @Body() body: unknown,
+    @CurrentAuth() auth: AuthContext,
+    @RequestId() rid?: string,
+  ) {
+    return this.phone
+      .verifyFirebase(
+        { userId: auth.userId },
+        parseInput(firebaseIdTokenSchema, body).idToken,
+        'ACCOUNT',
+        {
+          requestId: rid,
+        },
+      )
       .then(({ phone, verified }) => ({ phone, verified }));
   }
 

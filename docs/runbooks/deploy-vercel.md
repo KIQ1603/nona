@@ -42,3 +42,5 @@ Vercel domain: `/api/*` and `/media/*` are proxied to the API and the media stor
 - Request bodies proxied through Vercel are limited (about 4.5 MB for functions; check the current limit for external rewrites). Admin pictures of 8 MB may fail: resize them below ~4 MB, or serve the admin from a host without this limit.
 - Do not run `pnpm db:seed` against production (it creates sample data and a default admin).
 - Serverless functions cannot run the worker or the payment reconciliation loop: they stay on the backend host.
+
+For a free backend (API + worker on Render, PostgreSQL on Neon, media on Cloudflare R2) see `deploy-render.md`.

@@ -23,49 +23,47 @@ const events = async (type: string) =>
   ).rows;
 
 describe('account emails', () => {
-  it('sends a welcome email with a verification code on sign-up', async () => {
-    const { session } = await register(app, 'new@example.com');
-    expect(session).toBeTruthy();
+  it('mails the sign-up code first, and only a correct code creates an already-confirmed account plus a welcome email', async () => {
+    const start = await register(app, 'new@example.com');
+    expect(start.res.status).toBe(201);
+    const [otp] = await events('auth.email_otp');
+    expect(otp.payload).toMatchObject({
+      email: 'new@example.com',
+      code: start.start!.body.devCode,
+    });
     const [w] = await events('auth.welcome');
-    expect(w.payload).toMatchObject({ email: 'new@example.com', ttlMinutes: 10 });
-    expect(w.payload.code).toMatch(/^\d{6}$/);
-    const api = as(app, session!);
+    expect(w.payload).toMatchObject({ email: 'new@example.com' });
+    expect(w.payload.code).toBeUndefined(); // already proven: no second code
+    const api = as(app, start.session!);
     expect((await api.get('/v1/me/email')).body).toEqual({
       email: 'new@example.com',
-      verified: false,
+      verified: true,
     });
-    const wrong = await api
-      .post('/v1/me/email/verify')
-      .send({ code: w.payload.code === '000000' ? '111111' : '000000' });
-    expect(wrong.status).toBe(400);
-    expect(wrong.body.error.details.attemptsLeft).toBe(4);
-    const ok = await api.post('/v1/me/email/verify').send({ code: w.payload.code });
-    expect(ok.status, JSON.stringify(ok.body)).toBe(200);
-    expect(ok.body).toEqual({ email: 'new@example.com', verified: true });
-    expect((await api.post('/v1/me/email/otp').send({})).status).toBe(409); // already verified
   });
 
-  it('can send a new code (rate-limited), and only the newest works', async () => {
-    const { session } = await register(app, 'again@example.com');
+  it('lets an older, unconfirmed account request and confirm a code (rate-limited, newest code only)', async () => {
+    const { session } = await register(app, 'old@example.com');
+    await pool.query("UPDATE users SET email_verified_at = NULL WHERE email = 'old@example.com'");
     const api = as(app, session!);
-    const first = (await events('auth.welcome'))[0].payload.code as string;
-    expect((await api.post('/v1/me/email/otp').send({})).status).toBe(429); // too soon after sign-up
-    await pool.query("UPDATE email_otps SET created_at = created_at - interval '2 minutes'");
-    const res = await api.post('/v1/me/email/otp').send({});
-    expect(res.status, JSON.stringify(res.body)).toBe(200);
-    const [mail] = await events('auth.email_otp');
-    expect(mail.payload).toMatchObject({ email: 'again@example.com', code: res.body.devCode });
-    if (first !== res.body.devCode)
-      expect((await api.post('/v1/me/email/verify').send({ code: first })).status).toBe(400);
-    expect((await api.post('/v1/me/email/verify').send({ code: res.body.devCode })).status).toBe(
-      200,
-    );
+    expect((await api.get('/v1/me/email')).body.verified).toBe(false);
+    const first = await api.post('/v1/me/email/otp').send({});
+    expect(first.status, JSON.stringify(first.body)).toBe(200);
+    expect((await api.post('/v1/me/email/otp').send({})).status).toBe(429);
+    const bad = first.body.devCode === '000000' ? '111111' : '000000';
+    const wrong = await api.post('/v1/me/email/verify').send({ code: bad });
+    expect(wrong.status).toBe(400);
+    expect(wrong.body.error.details.attemptsLeft).toBe(4);
+    const ok = await api.post('/v1/me/email/verify').send({ code: first.body.devCode });
+    expect(ok.status, JSON.stringify(ok.body)).toBe(200);
+    expect(ok.body).toEqual({ email: 'old@example.com', verified: true });
   });
 
   it('locks the code after five wrong tries and expires it', async () => {
     const { session } = await register(app, 'lock@example.com');
+    await pool.query("UPDATE users SET email_verified_at = NULL WHERE email = 'lock@example.com'");
     const api = as(app, session!);
-    const code = (await events('auth.welcome'))[0].payload.code as string;
+    const res = await api.post('/v1/me/email/otp').send({});
+    const code = res.body.devCode as string;
     const bad = code === '000000' ? '111111' : '000000';
     for (let i = 0; i < 5; i++) await api.post('/v1/me/email/verify').send({ code: bad });
     expect((await api.post('/v1/me/email/verify').send({ code })).status).toBe(400);

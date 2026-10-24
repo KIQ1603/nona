@@ -291,11 +291,20 @@ describe('signed-in cart and merge on login', () => {
     const v = await variant();
     const g = guest(app);
     await g.post('/v1/cart/items').send({ variantId: v.id, quantity: 3 });
+    const start = await request(app.getHttpServer())
+      .post('/v1/auth/register/start')
+      .set('Origin', WEB_ORIGIN)
+      .send({
+        identifier: 'new@example.com',
+        password: 'correct-horse-battery',
+        confirmPassword: 'correct-horse-battery',
+        fullName: 'N',
+      });
     const res = await request(app.getHttpServer())
-      .post('/v1/auth/register')
+      .post('/v1/auth/register/verify')
       .set('Origin', WEB_ORIGIN)
       .set('Cookie', g.cookie!)
-      .send({ email: 'new@example.com', password: 'correct-horse-battery', fullName: 'N' });
+      .send({ token: start.body.token, code: start.body.devCode });
     const session = { cookie: cookieFrom(res, 'nona_session')!, csrf: res.body.csrfToken };
     expect(parse(await as(app, session).get('/v1/cart')).itemCount).toBe(3);
   });

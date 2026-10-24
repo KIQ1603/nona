@@ -2,7 +2,8 @@ import type { Permission, UserRole } from '@nona/contracts';
 
 export interface AuthContext {
   userId: string;
-  email: string;
+  /** null for an account created with a phone number. */
+  email: string | null;
   fullName: string;
   role: UserRole;
   sessionId: string;

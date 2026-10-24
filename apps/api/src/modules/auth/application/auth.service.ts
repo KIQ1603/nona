@@ -9,7 +9,6 @@ import { DatabaseService } from '../../../platform/database/database.service';
 import { ENV, type Env } from '../../../config/env';
 import { MfaService } from '../../mfa/application/mfa.service';
 import { AuditService } from '../../audit/application/audit.service';
-import { EmailVerificationService } from '../../accounts/application/email-verification.service';
 import { LoginThrottle } from '../infrastructure/login-throttle';
 import { PasswordHasher } from '../infrastructure/password-hasher';
 
@@ -55,7 +54,6 @@ export class AuthService {
     @Inject(LoginThrottle) private readonly throttle: LoginThrottle,
     @Inject(AuditService) private readonly audit: AuditService,
     @Inject(MfaService) private readonly mfa: MfaService,
-    @Inject(EmailVerificationService) private readonly emailVerification: EmailVerificationService,
     @Inject(ENV) private readonly env: Env,
   ) {}
 
@@ -69,13 +67,21 @@ export class AuthService {
       );
     }
 
+    // a mobile number (+84...) signs in a phone account; anything else is an email
+    const byPhone = email.startsWith('+84');
     const { rows } = await this.db.query<{
       id: string;
+      email: string | null;
       password_hash: string;
       full_name: string;
       role: UserRole;
       status: string;
-    }>('SELECT id, password_hash, full_name, role, status FROM users WHERE email = $1', [email]);
+    }>(
+      `SELECT id, email, password_hash, full_name, role, status FROM users WHERE ${
+        byPhone ? 'phone = $1 AND phone_verified_at IS NOT NULL' : 'email = $1'
+      }`,
+      [email],
+    );
     const user = rows[0];
     const valid = user
       ? await this.hasher.verify(user.password_hash, password)
@@ -89,7 +95,11 @@ export class AuthService {
         metadata: { email, ip: ctx.ip },
         requestId: ctx.requestId,
       });
-      throw new AppError('INVALID_CREDENTIALS', 401, 'Email hoặc mật khẩu không đúng.');
+      throw new AppError(
+        'INVALID_CREDENTIALS',
+        401,
+        'Email/số điện thoại hoặc mật khẩu không đúng.',
+      );
     }
     this.throttle.reset(throttleKey);
 
@@ -103,7 +113,7 @@ export class AuthService {
       kind: 'session' as const,
       ...(await this.startSession(
         client,
-        { id: user.id, email, fullName: user.full_name, role: user.role },
+        { id: user.id, email: user.email, fullName: user.full_name, role: user.role },
         ctx,
         'auth.login',
         restricted,
@@ -111,9 +121,80 @@ export class AuthService {
     }));
   }
 
+  /**
+   * Sign-in with a Google account. Known Google identity: just sign in. Unknown Google identity: a new
+   * customer is created (email already confirmed by Google, no usable password). If the email belongs to
+   * ANY existing account the sign-in is refused: Google never links itself to a password account, because
+   * that would let whoever controls the Google address take over an account whose email was never confirmed.
+   */
+  async loginWithGoogle(
+    profile: { sub: string; email: string; name: string },
+    ctx: LoginContext,
+  ): Promise<{ token: string; expiresAt: Date; auth: AuthContext; created: boolean }> {
+    const email = profile.email.trim().toLowerCase();
+    const refused = () =>
+      new AppError(
+        'CONFLICT',
+        409,
+        'Email này đã được đăng ký bằng mật khẩu. Hãy đăng nhập bằng email và mật khẩu.',
+        { reason: 'EMAIL_EXISTS' },
+      );
+    try {
+      return await this.db.transaction(async (client) => {
+        const known = await client.query<{
+          id: string;
+          email: string;
+          full_name: string;
+          role: UserRole;
+          status: string;
+        }>(
+          `SELECT u.id, u.email, u.full_name, u.role, u.status FROM user_identities i
+           JOIN users u ON u.id = i.user_id WHERE i.provider = 'google' AND i.subject = $1`,
+          [profile.sub],
+        );
+        const user = known.rows[0];
+        if (user) {
+          if (user.status !== 'ACTIVE' || user.role !== 'CUSTOMER')
+            throw new AppError('INVALID_CREDENTIALS', 401, 'Tài khoản không thể đăng nhập.');
+          const session = await this.startSession(
+            client,
+            { id: user.id, email: user.email, fullName: user.full_name, role: 'CUSTOMER' },
+            ctx,
+            'auth.google_login',
+          );
+          return { ...session, created: false };
+        }
+        const taken = await client.query('SELECT 1 FROM users WHERE email = $1', [email]);
+        if (taken.rowCount) throw refused();
+        const fullName = profile.name.trim().slice(0, 100) || email.split('@')[0]!;
+        const unusable = await this.hasher.hash(randomBytes(32).toString('hex'));
+        const created = await client.query<{ id: string }>(
+          `INSERT INTO users (email, password_hash, full_name, role, email_verified_at)
+           VALUES ($1,$2,$3,'CUSTOMER', now()) RETURNING id`,
+          [email, unusable, fullName],
+        );
+        await client.query(
+          `INSERT INTO user_identities (provider, subject, user_id, email) VALUES ('google', $1, $2, $3)`,
+          [profile.sub, created.rows[0]!.id, email],
+        );
+        await enqueueOutbox(client, 'auth.welcome', { email, fullName });
+        const session = await this.startSession(
+          client,
+          { id: created.rows[0]!.id, email, fullName, role: 'CUSTOMER' },
+          ctx,
+          'auth.google_register',
+        );
+        return { ...session, created: true };
+      });
+    } catch (error) {
+      if ((error as { code?: string }).code === '23505') throw refused(); // lost a race with another sign-up
+      throw error;
+    }
+  }
+
   private async startSession(
     client: pg.PoolClient,
-    user: { id: string; email: string; fullName: string; role: UserRole },
+    user: { id: string; email: string | null; fullName: string; role: UserRole },
     ctx: LoginContext,
     action: string,
     restricted = false,
@@ -152,50 +233,67 @@ export class AuthService {
     return { token, expiresAt, auth };
   }
 
-  /** Public sign-up: always creates a CUSTOMER and signs them in. */
-  async register(input: { email: string; password: string; fullName: string }, ctx: LoginContext) {
-    const key = `register|${ctx.ip ?? 'unknown'}`;
-    if (this.throttle.isBlocked(key, 10)) {
-      throw new AppError(
-        'RATE_LIMITED',
-        429,
-        'Bạn đã thử quá nhiều lần. Vui lòng thử lại sau ít phút.',
-      );
-    }
-    this.throttle.recordFailure(key); // counts attempts, not failures
-    const passwordHash = await this.hasher.hash(input.password);
-    try {
-      return await this.db.transaction(async (client) => {
-        const res = await client.query<{ id: string }>(
-          `INSERT INTO users (email, password_hash, full_name, role) VALUES ($1,$2,$3,'CUSTOMER') RETURNING id`,
-          [input.email, passwordHash, input.fullName],
-        );
-        // welcome mail carrying the code that confirms the address (sent by the worker)
-        const code = await this.emailVerification.issue(client, res.rows[0]!.id, input.email);
-        await enqueueOutbox(client, 'auth.welcome', {
-          email: input.email,
-          fullName: input.fullName,
-          code,
-          ttlMinutes: 10,
-        });
-        return this.startSession(
-          client,
-          { id: res.rows[0]!.id, email: input.email, fullName: input.fullName, role: 'CUSTOMER' },
-          ctx,
-          'auth.register',
-        );
+  /**
+   * Creates a CUSTOMER whose email or phone has just been proven with a one-time code, and signs them in.
+   * Called by the registration challenge inside its transaction.
+   */
+  async createVerifiedCustomer(
+    client: pg.PoolClient,
+    input: {
+      channel: 'EMAIL' | 'PHONE';
+      identifier: string;
+      fullName: string;
+      passwordHash: string;
+    },
+    ctx: LoginContext,
+  ) {
+    const email = input.channel === 'EMAIL' ? input.identifier : null;
+    const phone = input.channel === 'PHONE' ? input.identifier : null;
+    const res = await client.query<{ id: string }>(
+      `INSERT INTO users (email, phone, password_hash, full_name, role, email_verified_at, phone_verified_at)
+       VALUES ($1,$2,$3,$4,'CUSTOMER', CASE WHEN $1::text IS NULL THEN NULL ELSE now() END,
+               CASE WHEN $2::text IS NULL THEN NULL ELSE now() END) RETURNING id`,
+      [email, phone, input.passwordHash, input.fullName],
+    );
+    if (email) await enqueueOutbox(client, 'auth.welcome', { email, fullName: input.fullName });
+    return this.startSession(
+      client,
+      { id: res.rows[0]!.id, email, fullName: input.fullName, role: 'CUSTOMER' },
+      ctx,
+      'auth.register',
+    );
+  }
+
+  /** Sets a new password after a proven reset (by email link or by phone code), signs out everywhere and notifies. */
+  async applyPasswordReset(
+    client: pg.PoolClient,
+    user: { id: string; email: string | null; fullName: string },
+    passwordHash: string,
+    ctx: LoginContext,
+  ) {
+    await client.query('UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2', [
+      passwordHash,
+      user.id,
+    ]);
+    await client.query(
+      'UPDATE sessions SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL',
+      [user.id],
+    );
+    if (user.email)
+      await enqueueOutbox(client, 'auth.password_changed', {
+        email: user.email,
+        fullName: user.fullName,
+        how: 'reset',
       });
-    } catch (error) {
-      if ((error as { code?: string }).code === '23505') {
-        throw new AppError(
-          'CONFLICT',
-          409,
-          'Email này đã được đăng ký. Hãy đăng nhập hoặc dùng email khác.',
-          { field: 'email' },
-        );
-      }
-      throw error;
-    }
+    await this.audit.record(
+      {
+        actorId: user.id,
+        action: 'auth.password_reset',
+        metadata: { ip: ctx.ip },
+        requestId: ctx.requestId,
+      },
+      client,
+    );
   }
 
   /** Rotates the session token and CSRF token and extends expiry; the old cookie stops working. */
@@ -242,7 +340,7 @@ export class AuthService {
     if (!rows[0] || !(await this.hasher.verify(rows[0].password_hash, currentPassword))) {
       throw new AppError('INVALID_CREDENTIALS', 401, 'Mật khẩu hiện tại không đúng.');
     }
-    if (newPassword.toLowerCase() === auth.email)
+    if (auth.email && newPassword.toLowerCase() === auth.email)
       throw AppError.validation({
         issues: [{ path: 'newPassword', message: 'Mật khẩu không được trùng email' }],
       });
@@ -256,11 +354,12 @@ export class AuthService {
         'UPDATE sessions SET revoked_at = now() WHERE user_id = $1 AND id <> $2 AND revoked_at IS NULL',
         [auth.userId, auth.sessionId],
       );
-      await enqueueOutbox(client, 'auth.password_changed', {
-        email: auth.email,
-        fullName: auth.fullName,
-        how: 'change',
-      });
+      if (auth.email)
+        await enqueueOutbox(client, 'auth.password_changed', {
+          email: auth.email,
+          fullName: auth.fullName,
+          how: 'change',
+        });
       await this.audit.record(
         { actorId: auth.userId, action: 'auth.password_change', requestId },
         client,

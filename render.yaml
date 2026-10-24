@@ -1,0 +1,101 @@
+# Render Blueprint: the API and the worker in ONE free web service (Singapore).
+# The web app lives on Vercel, PostgreSQL on Neon, media on Cloudflare R2: see docs/runbooks/deploy-render.md
+services:
+  - type: web
+    name: nona-api
+    runtime: node
+    plan: free
+    region: singapore
+    branch: main
+    healthCheckPath: /v1/health/live
+    buildCommand: >-
+      corepack enable &&
+      pnpm install --frozen-lockfile --prod=false &&
+      pnpm --filter "@nona/api..." --filter "@nona/worker..." build
+    startCommand: bash scripts/render-start.sh
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: ENABLE_EXPERIMENTAL_COREPACK
+        value: '1'
+      - key: NODE_ENV
+        value: production
+      # --- where things are (fill in the Render dashboard) ---
+      - key: DATABASE_URL # Neon: postgres://...neon.tech/neondb?sslmode=require
+        sync: false
+      - key: WEB_ORIGIN # exact origin of the Vercel site, e.g. https://nona.vercel.app
+        sync: false
+      - key: API_PUBLIC_URL # this service's own URL, e.g. https://nona-api.onrender.com
+        sync: false
+      - key: MEDIA_BASE_URL # <WEB_ORIGIN>/media
+        sync: false
+      - key: TRUST_PROXY_HOPS # Vercel rewrite + Render proxy
+        value: 2
+      # --- object storage (Cloudflare R2, S3 compatible) ---
+      - key: STORAGE_DRIVER
+        value: s3
+      - key: S3_ENDPOINT
+        sync: false
+      - key: S3_REGION
+        value: auto
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY
+        sync: false
+      - key: S3_SECRET_KEY
+        sync: false
+      # --- secrets ---
+      - key: INTERNAL_API_TOKEN
+        generateValue: true
+      - key: OTP_SECRET
+        generateValue: true
+      - key: MFA_ENCRYPTION_KEY # 32 bytes, base64: openssl rand -base64 32
+        sync: false
+      # --- payments (production refuses the simulator) ---
+      - key: PAYMENTS_MODE
+        value: vnpay
+      - key: VNPAY_TMN_CODE
+        sync: false
+      - key: VNPAY_HASH_SECRET
+        sync: false
+      - key: VNPAY_PAY_URL
+        sync: false
+      - key: VNPAY_API_URL
+        sync: false
+      # --- Zalo OTP (production refuses the simulator) ---
+      - key: SMS_MODE # zalo or esms
+        value: zalo
+      - key: ESMS_API_KEY
+        sync: false
+      - key: ESMS_SECRET_KEY
+        sync: false
+      - key: ESMS_BRANDNAME
+        sync: false
+      - key: ZALO_APP_ID
+        sync: false
+      - key: ZALO_APP_SECRET
+        sync: false
+      - key: ZALO_OA_REFRESH_TOKEN
+        sync: false
+      - key: ZALO_TOKEN_KEY # openssl rand -base64 32
+        sync: false
+      - key: ZALO_ZNS_TEMPLATE_ID
+        sync: false
+      - key: ZALO_ZNS_CODE_PARAM
+        value: otp
+      # --- sign in with Google (optional) ---
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      # --- email sent by the worker ---
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        value: NONA <no-reply@your-domain.vn>

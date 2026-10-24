@@ -3,7 +3,8 @@ import { logger } from './logger.js';
 
 /** Port: the worker depends on this, never on a vendor API. */
 export interface SmsSender {
-  sendOtp(phoneE164: string, code: string, ttlMinutes: number): Promise<void>;
+  /** `requestId` is stable per message (the outbox event id), so a retry never sends a second SMS. */
+  sendOtp(phoneE164: string, code: string, ttlMinutes: number, requestId?: string): Promise<void>;
 }
 
 /** The message was refused for a reason that retrying cannot fix (e.g. the number is not on Zalo). */
@@ -83,5 +84,67 @@ export class ZaloZnsSender implements SmsSender {
 export class SimulatorSmsSender implements SmsSender {
   async sendOtp(phoneE164: string, code: string): Promise<void> {
     logger.warn({ phone: phoneE164, code }, '[SMS simulator] OTP not sent, use this code');
+  }
+}
+
+export interface EsmsConfig {
+  apiKey: string;
+  secretKey: string;
+  /** Sender name registered (and approved) at eSMS. */
+  brandname: string;
+  /** "2" = customer care (OTP) with a registered brandname and template. */
+  smsType: string;
+  /** Message text with {code} and {minutes}; it must match the template registered at eSMS. */
+  template: string;
+  /** "1" validates the request without sending or charging (testing). */
+  sandbox: boolean;
+  apiUrl: string;
+}
+
+/** Message text without diacritics: plain GSM text is cheaper and what eSMS templates usually are. */
+export const DEFAULT_ESMS_TEMPLATE =
+  '{code} la ma xac thuc NONA cua ban. Ma co hieu luc {minutes} phut. Khong chia se ma nay cho bat ky ai.';
+
+/** Sends the OTP as an SMS through eSMS.vn (SendMultipleMessage_V4_post_json). */
+export class EsmsSender implements SmsSender {
+  constructor(private readonly config: EsmsConfig) {}
+
+  async sendOtp(
+    phoneE164: string,
+    code: string,
+    ttlMinutes: number,
+    requestId?: string,
+  ): Promise<void> {
+    const res = await fetch(this.config.apiUrl, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        ApiKey: this.config.apiKey,
+        SecretKey: this.config.secretKey,
+        Phone: phoneE164.replace(/^\+84/, '0'),
+        Content: this.config.template
+          .replace('{code}', code)
+          .replace('{minutes}', String(ttlMinutes)),
+        Brandname: this.config.brandname,
+        SmsType: this.config.smsType,
+        IsUnicode: '0',
+        Sandbox: this.config.sandbox ? '1' : '0',
+        campaignid: 'nona-otp',
+        ...(requestId ? { RequestId: requestId.slice(0, 50) } : {}),
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    const body = (await res.json().catch(() => null)) as {
+      CodeResult?: string | number;
+      ErrorMessage?: string;
+    } | null;
+    const result = String(body?.CodeResult ?? res.status);
+    // 100 = accepted, 124 = this RequestId was already sent (a retry): both mean the message is out
+    if (result === '100' || result === '124') return;
+    // never log the code or the keys
+    const message = `eSMS error ${result}: ${body?.ErrorMessage ?? 'no response body'}`;
+    // wrong brandname / unregistered template: retrying cannot help, the configuration has to be fixed
+    if (result === '104' || result === '146') throw new SmsRejectedError(message);
+    throw new Error(message);
   }
 }

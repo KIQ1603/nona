@@ -36,49 +36,88 @@ describe('registration', () => {
   });
 
   it('cannot be used to self-assign a role', async () => {
-    const res = await request(app.getHttpServer())
-      .post('/v1/auth/register')
+    const start = await request(app.getHttpServer())
+      .post('/v1/auth/register/start')
       .set('Origin', WEB_ORIGIN)
-      .send({ email: 'sneaky@example.com', password: PASSWORD, fullName: 'X', role: 'ADMIN' });
+      .send({
+        identifier: 'sneaky@example.com',
+        password: PASSWORD,
+        confirmPassword: PASSWORD,
+        fullName: 'X',
+        role: 'ADMIN',
+      });
+    const res = await request(app.getHttpServer())
+      .post('/v1/auth/register/verify')
+      .set('Origin', WEB_ORIGIN)
+      .send({ token: start.body.token, code: start.body.devCode });
     expect(res.status).toBe(201);
     expect(res.body.role).toBe('CUSTOMER');
   });
 
   it('validates input and rejects duplicate emails (case-insensitively)', async () => {
     const post = (b: object) =>
-      request(app.getHttpServer()).post('/v1/auth/register').set('Origin', WEB_ORIGIN).send(b);
-    expect((await post({ email: 'bad', password: PASSWORD, fullName: 'A' })).status).toBe(400);
-    expect((await post({ email: 'a@example.com', password: 'short', fullName: 'A' })).status).toBe(
-      400,
-    );
+      request(app.getHttpServer())
+        .post('/v1/auth/register/start')
+        .set('Origin', WEB_ORIGIN)
+        .send({ confirmPassword: PASSWORD, ...b });
+    expect((await post({ identifier: 'bad', password: PASSWORD, fullName: 'A' })).status).toBe(400);
     expect(
-      (await post({ email: 'a@example.com', password: 'a@example.com', fullName: 'A' })).status,
+      (
+        await post({
+          identifier: 'a@example.com',
+          password: 'short',
+          fullName: 'A',
+          confirmPassword: 'short',
+        })
+      ).status,
     ).toBe(400);
-    expect((await post({ email: 'a@example.com', password: PASSWORD, fullName: '' })).status).toBe(
-      400,
-    );
     expect(
-      (await post({ email: 'dup@example.com', password: PASSWORD, fullName: 'A' })).status,
-    ).toBe(201);
-    const dup = await post({ email: 'DUP@example.com', password: PASSWORD, fullName: 'B' });
+      (
+        await post({
+          identifier: 'a@example.com',
+          password: 'a@example.com',
+          fullName: 'A',
+          confirmPassword: 'a@example.com',
+        })
+      ).status,
+    ).toBe(400);
+    expect(
+      (await post({ identifier: 'a@example.com', password: PASSWORD, fullName: '' })).status,
+    ).toBe(400);
+    expect(
+      (
+        await post({
+          identifier: 'a@example.com',
+          password: PASSWORD,
+          fullName: 'A',
+          confirmPassword: 'other-password-1',
+        })
+      ).status,
+    ).toBe(400);
+    expect((await register(app, 'dup@example.com')).res.status).toBe(201);
+    const dup = await post({ identifier: 'DUP@example.com', password: PASSWORD, fullName: 'B' });
     expect(dup.status).toBe(409);
     expect(dup.body.error.code).toBe('CONFLICT');
   });
 
-  it('rate-limits repeated sign-ups from one address', async () => {
+  it('rate-limits repeated sign-up codes from one address', async () => {
     const statuses: number[] = [];
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 17; i++)
       statuses.push(
         (
           await request(app.getHttpServer())
-            .post('/v1/auth/register')
+            .post('/v1/auth/register/start')
             .set('Origin', WEB_ORIGIN)
-            .send({ email: `bulk${i}@example.com`, password: PASSWORD, fullName: 'B' })
+            .send({
+              identifier: `bulk${i}@example.com`,
+              password: PASSWORD,
+              confirmPassword: PASSWORD,
+              fullName: 'B',
+            })
         ).status,
       );
-    }
-    expect(statuses.slice(0, 10).every((s) => s === 201)).toBe(true);
-    expect(statuses.slice(10)).toEqual([429, 429]);
+    expect(statuses.slice(0, 15).every((s) => s === 200)).toBe(true);
+    expect(statuses.slice(15)).toEqual([429, 429]);
   });
 });
 

@@ -8,6 +8,7 @@ import { ENV, type Env } from '../../../config/env';
 import { DatabaseService } from '../../../platform/database/database.service';
 import { AuditService } from '../../audit/application/audit.service';
 import { hashToken } from '../../cart/infrastructure/cart.repository';
+import { FirebasePhoneService } from './firebase-phone.service';
 
 export const OTP_TTL_SECONDS = 300;
 export const OTP_RESEND_SECONDS = 60;
@@ -44,6 +45,7 @@ export class PhoneVerificationService {
     @Inject(DatabaseService) private readonly db: DatabaseService,
     @Inject(AuditService) private readonly audit: AuditService,
     @Inject(ENV) private readonly env: Env,
+    @Inject(FirebasePhoneService) private readonly firebase: FirebasePhoneService,
   ) {}
 
   private hash(code: string, phone: string, owner: PhoneOwner) {
@@ -90,6 +92,12 @@ export class PhoneVerificationService {
     purpose: OtpPurpose,
     ctx: Ctx = {},
   ): Promise<PhoneOtpSent> {
+    if (this.firebase.enabled)
+      throw new AppError(
+        'CONFLICT',
+        409,
+        'Số điện thoại được xác thực qua Firebase, không gửi mã từ máy chủ.',
+      );
     const [col, val] = ownerCol(owner);
     const sent = await this.db.transaction(async (c) => {
       // serialise requests of one owner so the limits cannot be raced
@@ -228,42 +236,76 @@ export class PhoneVerificationService {
           );
         }
         await c.query('UPDATE phone_otps SET consumed_at = now() WHERE id = $1', [otp.id]);
-        if (purpose === 'ACCOUNT' && 'userId' in owner) {
-          try {
-            await c.query('UPDATE users SET phone = $2, phone_verified_at = now() WHERE id = $1', [
-              owner.userId,
-              otp.phone,
-            ]);
-          } catch (e) {
-            if ((e as { code?: string }).code === '23505')
-              return new AppError(
-                'CONFLICT',
-                409,
-                'Số điện thoại này đã được dùng cho tài khoản khác.',
-              );
-            throw e;
-          }
-        } else {
-          await c.query(
-            `INSERT INTO verified_phones (phone, ${col}) VALUES ($1, $2)
-           ON CONFLICT (${col}, phone) WHERE ${col} IS NOT NULL DO UPDATE SET verified_at = now()`,
-            [otp.phone, val],
-          );
-        }
-        await this.audit.record(
-          {
-            actorId: 'userId' in owner ? owner.userId : undefined,
-            action: 'account.phone_verified',
-            metadata: { phone: maskPhone(otp.phone), purpose },
-            requestId: ctx.requestId,
-          },
-          c,
-        );
-        return { phone: maskPhone(otp.phone), verified: true, rawPhone: otp.phone };
+        return this.applyProof(c, owner, otp.phone, purpose, 'otp', ctx);
       },
     );
     if (outcome instanceof AppError) throw outcome;
     return outcome;
+  }
+
+  /** Firebase already checked the code in the browser; we check its signed token and record the proof. */
+  async verifyFirebase(
+    owner: PhoneOwner,
+    idToken: string,
+    purpose: OtpPurpose,
+    ctx: Ctx = {},
+  ): Promise<PhoneStatus & { rawPhone: string }> {
+    const phone = await this.firebase.verifyIdToken(idToken);
+    const [, val] = ownerCol(owner);
+    const outcome = await this.db.transaction<(PhoneStatus & { rawPhone: string }) | AppError>(
+      async (c) => {
+        if ('userId' in owner)
+          await c.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [val]);
+        else await c.query('SELECT pg_advisory_xact_lock(hashtext($1))', [val]);
+        return this.applyProof(c, owner, phone, purpose, 'firebase', ctx);
+      },
+    );
+    if (outcome instanceof AppError) throw outcome;
+    return outcome;
+  }
+
+  /** Records that the owner controls the number: on the account, or as a checkout proof. */
+  private async applyProof(
+    c: pg.PoolClient,
+    owner: PhoneOwner,
+    phone: string,
+    purpose: OtpPurpose,
+    method: 'otp' | 'firebase',
+    ctx: Ctx,
+  ): Promise<(PhoneStatus & { rawPhone: string }) | AppError> {
+    const [col, val] = ownerCol(owner);
+    if (purpose === 'ACCOUNT' && 'userId' in owner) {
+      try {
+        await c.query('UPDATE users SET phone = $2, phone_verified_at = now() WHERE id = $1', [
+          owner.userId,
+          phone,
+        ]);
+      } catch (e) {
+        if ((e as { code?: string }).code === '23505')
+          return new AppError(
+            'CONFLICT',
+            409,
+            'Số điện thoại này đã được dùng cho tài khoản khác.',
+          );
+        throw e;
+      }
+    } else {
+      await c.query(
+        `INSERT INTO verified_phones (phone, ${col}) VALUES ($1, $2)
+         ON CONFLICT (${col}, phone) WHERE ${col} IS NOT NULL DO UPDATE SET verified_at = now()`,
+        [phone, val],
+      );
+    }
+    await this.audit.record(
+      {
+        actorId: 'userId' in owner ? owner.userId : undefined,
+        action: 'account.phone_verified',
+        metadata: { phone: maskPhone(phone), purpose, method },
+        requestId: ctx.requestId,
+      },
+      c,
+    );
+    return { phone: maskPhone(phone), verified: true, rawPhone: phone };
   }
 
   async remove(userId: string, ctx: Ctx = {}): Promise<PhoneStatus> {

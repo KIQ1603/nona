@@ -85,3 +85,5 @@ Each production migration states forward steps, data backfill, compatibility win
 `users.phone` (E.164, CHECK) and `users.phone_verified_at` (migration 0018); a partial unique index lets only one account own a verified number. `phone_otps`: user, phone, keyed hash of the code (HMAC-SHA256 with `OTP_SECRET`, never the code), attempts, expiry, consumed_at; rows older than 2 days are removed by the worker cleanup.
 
 Migration 0019: `phone_otps` can belong to a guest (`guest_token_hash`, exactly one owner), has `purpose` (ACCOUNT|CHECKOUT) and `ip`; `verified_phones` (user or guest owner, phone, verified_at; unique per owner+phone) records numbers proven at checkout.
+
+Migration 0024: `users.email` is nullable (CHECK: email or phone), unique login index on confirmed phones, `orders.customer_email` nullable, and `auth_challenges` (purpose REGISTER|RESET, channel EMAIL|PHONE, identifier, pending full name and password hash, keyed hash of the code, attempts, expiry, ip) holds pending sign-ups and phone resets; nothing in `users` changes until the code is right.

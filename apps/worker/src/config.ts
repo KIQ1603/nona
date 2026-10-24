@@ -18,9 +18,14 @@ export function loadConfig() {
     pass: process.env.SMTP_PASS,
   };
   const smsMode = process.env.SMS_MODE ?? 'simulator';
-  if (smsMode !== 'simulator' && smsMode !== 'zalo')
-    throw new Error('SMS_MODE must be simulator or zalo');
-  if (process.env.NODE_ENV === 'production' && smsMode !== 'zalo')
+  if (smsMode !== 'simulator' && smsMode !== 'zalo' && smsMode !== 'esms')
+    throw new Error('SMS_MODE must be simulator, zalo or esms');
+  // with Firebase Phone Auth the API never queues a code, so the simulator cannot swallow one
+  if (
+    process.env.NODE_ENV === 'production' &&
+    smsMode === 'simulator' &&
+    !process.env.FIREBASE_PROJECT_ID
+  )
     throw new Error('the SMS simulator must not run in production');
   if (smsMode === 'zalo') {
     if (!process.env.ZALO_ZNS_TEMPLATE_ID)
@@ -36,7 +41,18 @@ export function loadConfig() {
   }
   return {
     databaseUrl,
-    smsMode: smsMode as 'simulator' | 'zalo',
+    smsMode: smsMode as 'simulator' | 'zalo' | 'esms',
+    esms: {
+      apiKey: process.env.ESMS_API_KEY ?? '',
+      secretKey: process.env.ESMS_SECRET_KEY ?? '',
+      brandname: process.env.ESMS_BRANDNAME ?? '',
+      smsType: process.env.ESMS_SMS_TYPE ?? '2',
+      template: process.env.ESMS_OTP_TEMPLATE || undefined,
+      sandbox: process.env.ESMS_SANDBOX === '1',
+      apiUrl:
+        process.env.ESMS_API_URL ??
+        'https://rest.esms.vn/MainService.svc/json/SendMultipleMessage_V4_post_json/',
+    },
     zalo: {
       staticAccessToken: process.env.ZALO_ZNS_ACCESS_TOKEN,
       oauth: process.env.ZALO_APP_ID

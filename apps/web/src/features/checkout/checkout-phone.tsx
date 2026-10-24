@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  normalizeVnPhone,
+  normalizeVnMobile,
   OTP_LENGTH,
   phoneOtpSentSchema,
   type PhoneOtpSent,
@@ -9,10 +9,11 @@ import {
 import { useEffect, useState, type FormEvent } from 'react';
 import { useToast } from '@/components/ui/toast';
 import { useAction } from '@/features/account/use-action';
+import { usePhoneProof } from '@/features/account/use-phone-proof';
 import { useCustomer } from '@/lib/customer-client';
 
 /**
- * Confirms the phone number that will receive the order with a one-time code (Zalo), right under the
+ * Confirms the phone number that will receive the order with a one-time code (Zalo or SMS), right under the
  * delivery details. Works for guests and signed-in customers; reports whether the number is verified.
  */
 export function CheckoutPhone({
@@ -23,10 +24,11 @@ export function CheckoutPhone({
   onVerified: (verified: boolean) => void;
 }) {
   const { request } = useCustomer();
+  const proof = usePhoneProof();
   const toast = useToast();
   const ask = useAction();
   const check = useAction();
-  const normalized = normalizeVnPhone(phone);
+  const normalized = normalizeVnMobile(phone);
   const [verified, setVerified] = useState(false);
   const [sent, setSent] = useState<PhoneOtpSent | null>(null);
   const [code, setCode] = useState('');
@@ -68,7 +70,9 @@ export function CheckoutPhone({
 
   if (!normalized)
     return (
-      <p className="phone-hint">Nhập số điện thoại hợp lệ để xác thực bằng mã OTP qua Zalo.</p>
+      <p className="phone-hint">
+        Nhập số di động hợp lệ (đầu số 03, 05, 07, 08, 09) để xác thực bằng mã OTP.
+      </p>
     );
 
   if (verified)
@@ -81,19 +85,29 @@ export function CheckoutPhone({
 
   const sendCode = async (e?: FormEvent) => {
     e?.preventDefault();
-    const res = await ask.run(async () =>
-      phoneOtpSentSchema.parse(await request('POST', '/checkout/phone/otp', { phone: normalized })),
-    );
+    const res = await ask.run(async (): Promise<PhoneOtpSent> => {
+      if (proof.firebase) {
+        await proof.send(normalized);
+        return { phone: phone.trim(), expiresInSeconds: 0, resendAfterSeconds: 60 };
+      }
+      return phoneOtpSentSchema.parse(
+        await request('POST', '/checkout/phone/otp', { phone: normalized }),
+      );
+    });
     if (res) {
       setSent(res);
       setCode('');
       setWait(res.resendAfterSeconds);
-      toast(`Đã gửi mã đến Zalo của số ${res.phone}`, 'success');
+      toast(`Đã gửi mã đến số ${res.phone}`, 'success');
     }
   };
   const verify = async () => {
-    const res = await check.run(() =>
-      request<{ verified: boolean }>('POST', '/checkout/phone/verify', { code }),
+    const res = await check.run(async () =>
+      proof.firebase
+        ? request<{ verified: boolean }>('POST', '/checkout/phone/firebase', {
+            idToken: await proof.confirm(code),
+          })
+        : request<{ verified: boolean }>('POST', '/checkout/phone/verify', { code }),
     );
     if (res?.verified) {
       setVerified(true);
@@ -104,15 +118,16 @@ export function CheckoutPhone({
 
   return (
     <div className="phone-box" role="group" aria-label="Xác thực số điện thoại">
+      <div ref={proof.holder} />
       <p className="phone-warn">
         <strong>Cần xác thực số điện thoại</strong> trước khi đặt hàng. Chúng tôi gửi mã{' '}
-        {OTP_LENGTH} số qua Zalo.
+        {OTP_LENGTH} số bằng tin nhắn.
       </p>
       {!sent ? (
         <button
           type="button"
           className="btn btn-dark"
-          disabled={ask.pending}
+          disabled={ask.pending || proof.firebase === undefined}
           onClick={() => void sendCode()}
         >
           {ask.pending ? 'Đang gửi…' : 'Gửi mã xác thực'}

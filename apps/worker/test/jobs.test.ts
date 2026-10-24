@@ -3,7 +3,13 @@ import pg from 'pg';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { cleanup } from '../src/jobs/cleanup.js';
 import { backoffSeconds, MAX_ATTEMPTS, processOutbox } from '../src/jobs/outbox.js';
-import { SmsRejectedError, ZaloZnsSender, type SmsSender } from '../src/sms.js';
+import {
+  DEFAULT_ESMS_TEMPLATE,
+  EsmsSender,
+  SmsRejectedError,
+  ZaloZnsSender,
+  type SmsSender,
+} from '../src/sms.js';
 import { checkAlerts } from '../src/jobs/alerts.js';
 import { callInternalJob } from '../src/jobs/internal.js';
 
@@ -53,6 +59,17 @@ const enqueue = (type: string, payload: object) =>
   ]);
 const events = async () =>
   (await pool.query('SELECT * FROM outbox_events ORDER BY created_at, id')).rows;
+
+describe('events without an email address', () => {
+  it('skips the email of an order placed by a phone-only account instead of dead-lettering it', async () => {
+    await enqueue('order.placed', { ...placed('x@example.com', 'AB12CD34EF56'), email: null });
+    expect(await processOutbox(pool, new FakeMailer(), opts)).toMatchObject({
+      skipped: 1,
+      dead: 0,
+    });
+    expect((await events())[0].status).toBe('SENT');
+  });
+});
 
 describe('phone OTP delivery', () => {
   const otp = (extra: object = {}) =>
@@ -401,6 +418,81 @@ describe('Zalo access token', () => {
       expect(seen).toEqual(['old', 'new']);
     } finally {
       globalThis.fetch = real;
+    }
+  });
+});
+
+describe('eSMS sender', () => {
+  const cfg = {
+    apiKey: 'KEY',
+    secretKey: 'SECRET',
+    brandname: 'NONA',
+    smsType: '2',
+    template: DEFAULT_ESMS_TEMPLATE,
+    sandbox: false,
+    apiUrl: 'https://esms.test/send',
+  };
+  const answer = (result: object) => {
+    const calls: Record<string, string>[] = [];
+    const real = globalThis.fetch;
+    globalThis.fetch = (async (_u: string, init: RequestInit) => {
+      calls.push(JSON.parse(String(init.body)));
+      return new Response(JSON.stringify(result), { status: 200 });
+    }) as typeof fetch;
+    return { calls, restore: () => void (globalThis.fetch = real) };
+  };
+
+  it('sends the code with a local phone number, the brandname and a stable request id', async () => {
+    const r = answer({ CodeResult: '100', SMSID: 'x' });
+    try {
+      await new EsmsSender(cfg).sendOtp('+84912345678', '123456', 5, 'evt-1');
+      expect(r.calls[0]).toMatchObject({
+        ApiKey: 'KEY',
+        SecretKey: 'SECRET',
+        Phone: '0912345678',
+        Brandname: 'NONA',
+        SmsType: '2',
+        IsUnicode: '0',
+        Sandbox: '0',
+        RequestId: 'evt-1',
+      });
+      expect(r.calls[0]!.Content).toBe(
+        '123456 la ma xac thuc NONA cua ban. Ma co hieu luc 5 phut. Khong chia se ma nay cho bat ky ai.',
+      );
+    } finally {
+      r.restore();
+    }
+  });
+
+  it('treats a duplicate request id as already sent, and sandbox as validation only', async () => {
+    const r = answer({ CodeResult: '124', ErrorMessage: 'duplicate' });
+    try {
+      await expect(
+        new EsmsSender(cfg).sendOtp('+84912345678', '1', 5, 'evt-1'),
+      ).resolves.toBeUndefined();
+      await new EsmsSender({ ...cfg, sandbox: true }).sendOtp('+84912345678', '1', 5);
+      expect(r.calls[1]!.Sandbox).toBe('1');
+    } finally {
+      r.restore();
+    }
+  });
+
+  it('gives up at once on a missing brandname/template and retries on other errors, never leaking keys', async () => {
+    for (const [code, kind] of [
+      ['104', SmsRejectedError],
+      ['146', SmsRejectedError],
+      ['101', Error],
+    ] as const) {
+      const r = answer({ CodeResult: code, ErrorMessage: 'nope' });
+      try {
+        const err = await new EsmsSender(cfg).sendOtp('+84912345678', '999999', 5).catch((e) => e);
+        expect(err).toBeInstanceOf(kind);
+        if (code === '101') expect(err).not.toBeInstanceOf(SmsRejectedError);
+        expect(String(err.message)).toContain(`eSMS error ${code}`);
+        expect(String(err.message)).not.toMatch(/KEY|SECRET|999999/);
+      } finally {
+        r.restore();
+      }
     }
   });
 });

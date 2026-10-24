@@ -19,7 +19,11 @@ const config: NextConfig = {
       fallback: [
         { source: '/api/:path*', destination: `${API_URL}/v1/:path*` },
         // Uploaded product media (seed images in /public/media/seed are served first from disk).
-        { source: '/media/:path*', destination: `${MEDIA_ORIGIN}/:path*` },
+        // only the public prefixes are proxied: customers' design files (designs/) are never reachable here
+        {
+          source: '/media/:prefix(products|articles|custom)/:path*',
+          destination: `${MEDIA_ORIGIN}/:prefix/:path*`,
+        },
       ],
     };
   },

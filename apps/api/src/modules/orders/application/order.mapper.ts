@@ -43,7 +43,11 @@ export function toOrderDto(
     shippingFeeVnd: Number(order.shipping_fee_vnd),
     totalVnd: Number(order.total_vnd),
     placedAt: order.placed_at.toISOString(),
-    customerEmail: ctx.isOwner ? order.customer_email : maskEmail(order.customer_email),
+    customerEmail: !order.customer_email
+      ? null
+      : ctx.isOwner
+        ? order.customer_email
+        : maskEmail(order.customer_email),
     customerNote: ctx.isOwner ? order.customer_note : null,
     items: d.items.map((i) => ({
       productSlug: i.product_slug as string,

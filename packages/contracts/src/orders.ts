@@ -158,7 +158,7 @@ export const orderSchema = z.object({
   shippingFeeVnd: z.number().int(),
   totalVnd: z.number().int(),
   placedAt: z.string(),
-  customerEmail: z.string(),
+  customerEmail: z.string().nullable().default(null),
   customerNote: z.string().nullable(),
   items: z.array(orderItemSchema),
   shippingAddress: shippingAddressSchema,
@@ -201,7 +201,7 @@ export const adminOrderListSchema = z.object({
       id: z.string(),
       code: z.string(),
       status: z.enum(ORDER_STATUSES),
-      customerEmail: z.string(),
+      customerEmail: z.string().nullable().default(null),
       customerName: z.string(),
       totalVnd: z.number().int(),
       itemCount: z.number().int(),
@@ -266,9 +266,38 @@ export const updateOrderStatusSchema = z.object({
     .optional(),
 });
 
-export const forgotPasswordSchema = z.object({
-  email: z.string().trim().toLowerCase().email().max(254),
-});
+/** An email (a reset link is mailed) or a mobile number (a code is sent by SMS). `email` is the older field name. */
+export const forgotPasswordSchema = z
+  .object({
+    identifier: z.string().trim().max(254).optional(),
+    email: z.string().trim().max(254).optional(),
+  })
+  .refine((v) => Boolean(v.identifier ?? v.email), {
+    message: 'Vui lòng nhập email hoặc số điện thoại',
+  })
+  .transform((v) => ({ identifier: (v.identifier ?? v.email)! }));
+/** Phone reset, step 2: the SMS code plus the new password (typed twice). */
+export const resetPasswordByPhoneSchema = z
+  .object({
+    token: z.string().uuid(),
+    /** The SMS code we sent, or (when Firebase Phone Auth is on) the Firebase ID token instead. */
+    code: z
+      .string()
+      .trim()
+      .regex(/^[0-9]{6}$/, 'Mã gồm 6 chữ số')
+      .optional(),
+    idToken: z.string().min(100).max(4096).optional(),
+    newPassword: passwordSchema,
+    confirmPassword: z.string().max(200),
+  })
+  .refine((v) => Boolean(v.code) !== Boolean(v.idToken), {
+    message: 'Cần mã xác thực',
+    path: ['code'],
+  })
+  .refine((v) => v.newPassword === v.confirmPassword, {
+    message: 'Mật khẩu nhập lại không khớp',
+    path: ['confirmPassword'],
+  });
 export const resetPasswordSchema = z
   .object({
     token: z.string().min(20).max(200),

@@ -13,7 +13,7 @@ const LINKS = [
   { href: '/tai-khoan/mat-khau', label: 'Đổi mật khẩu' },
 ];
 
-export function AccountNav({ fullName, email }: { fullName: string; email: string }) {
+export function AccountNav({ fullName, email }: { fullName: string; email: string | null }) {
   const pathname = usePathname();
   const router = useRouter();
   const { signOut } = useCustomer();
@@ -21,7 +21,7 @@ export function AccountNav({ fullName, email }: { fullName: string; email: strin
     <nav className="account-nav" aria-label="Tài khoản">
       <div className="who">
         <strong>{fullName}</strong>
-        <span>{email}</span>
+        <span>{email ?? 'Đăng ký bằng số điện thoại'}</span>
       </div>
       {LINKS.map((l) => (
         <Link key={l.href} href={l.href} aria-current={pathname === l.href ? 'page' : undefined}>

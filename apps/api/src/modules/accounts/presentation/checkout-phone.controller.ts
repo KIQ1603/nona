@@ -1,5 +1,10 @@
 import { Body, Controller, Get, HttpCode, Inject, Post, Query, Req } from '@nestjs/common';
-import { normalizeVnPhone, phoneOtpRequestSchema, phoneOtpVerifySchema } from '@nona/contracts';
+import {
+  firebaseIdTokenSchema,
+  normalizeVnPhone,
+  phoneOtpRequestSchema,
+  phoneOtpVerifySchema,
+} from '@nona/contracts';
 import type { Request } from 'express';
 import type { RequestWithAuth } from '../../../common/auth/auth.types';
 import { OptionalAuth } from '../../../common/auth/decorators';
@@ -50,6 +55,19 @@ export class CheckoutPhoneController {
       {
         requestId: req.headers['x-request-id'] as string | undefined,
       },
+    );
+    return { phone: res.rawPhone, verified: true };
+  }
+
+  @Post('firebase')
+  @HttpCode(200)
+  async verifyFirebase(@Body() body: unknown, @Req() req: Req) {
+    const owner = this.owner(req);
+    const res = await this.phone.verifyFirebase(
+      owner,
+      parseInput(firebaseIdTokenSchema, body).idToken,
+      'CHECKOUT',
+      { requestId: req.headers['x-request-id'] as string | undefined },
     );
     return { phone: res.rawPhone, verified: true };
   }

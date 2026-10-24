@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui/toast';
 import { useAction } from '@/features/account/use-action';
 import { useCustomer } from '@/lib/customer-client';
 
-export function ProfileForm({ fullName, email }: { fullName: string; email: string }) {
+export function ProfileForm({ fullName, email }: { fullName: string; email: string | null }) {
   const { request, setUser } = useCustomer();
   const router = useRouter();
   const toast = useToast();
@@ -30,7 +30,7 @@ export function ProfileForm({ fullName, email }: { fullName: string; email: stri
       <h2>Thông tin cá nhân</h2>
       <label className="field">
         <span>Email</span>
-        <input value={email} disabled readOnly />
+        <input value={email ?? 'Chưa có email'} disabled readOnly />
         <small>Email dùng để đăng nhập và không thể thay đổi tại đây.</small>
       </label>
       <label className="field">

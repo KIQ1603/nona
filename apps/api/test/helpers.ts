@@ -76,7 +76,7 @@ function freePort(): Promise<number> {
 export async function resetAll(pool: pg.Pool, app?: NestExpressApplication) {
   app?.get(LoginThrottle).clear();
   await pool.query(
-    'TRUNCATE articles, design_layers, custom_design_versions, custom_designs, design_assets, coupons, payment_events, refunds, user_mfa, orders, outbox_events, password_reset_tokens, inventory_reservations, inventory_movements, product_images, product_variants, products, categories, users, idempotency_keys CASCADE',
+    'TRUNCATE auth_challenges, articles, design_layers, custom_design_versions, custom_designs, design_assets, coupons, payment_events, refunds, user_mfa, orders, outbox_events, password_reset_tokens, inventory_reservations, inventory_movements, product_images, product_variants, products, categories, users, idempotency_keys CASCADE',
   );
   await pool.query(
     `INSERT INTO site_settings (key, value, version) VALUES
@@ -183,18 +183,28 @@ export function guest(app: NestExpressApplication) {
   };
 }
 
+/**
+ * Signs a customer up the way the site does: step 1 sends a code, step 2 sends it back (the simulator
+ * returns the code as `devCode`). `res` is the failing step's response, or the verify response.
+ */
 export async function register(
   app: NestExpressApplication,
-  email: string,
+  identifier: string,
   password = PASSWORD,
   fullName = 'Khách Hàng',
 ) {
-  const res = await request(app.getHttpServer())
-    .post('/v1/auth/register')
+  const start = await request(app.getHttpServer())
+    .post('/v1/auth/register/start')
     .set('Origin', WEB_ORIGIN)
-    .send({ email, password, fullName });
+    .send({ fullName, identifier, password, confirmPassword: password });
+  if (start.status !== 200) return { res: start, session: undefined };
+  const res = await request(app.getHttpServer())
+    .post('/v1/auth/register/verify')
+    .set('Origin', WEB_ORIGIN)
+    .send({ token: start.body.token, code: start.body.devCode });
   return {
     res,
+    start,
     session:
       res.status === 201
         ? ({ cookie: cookieFrom(res, 'nona_session')!, csrf: res.body.csrfToken } as Session)

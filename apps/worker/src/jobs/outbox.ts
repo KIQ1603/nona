@@ -53,7 +53,7 @@ export async function processOutbox(
         }
         if (!options.sms) throw new PermanentError('no SMS sender configured');
         try {
-          await options.sms.sendOtp(phone, code, ttlMinutes ?? 5);
+          await options.sms.sendOtp(phone, code, ttlMinutes ?? 5, event.id);
         } catch (e) {
           if (e instanceof SmsRejectedError) throw new PermanentError(e.message);
           throw e;
@@ -66,6 +66,12 @@ export async function processOutbox(
       const to = typeof event.payload.email === 'string' ? event.payload.email : null;
       if (!email) {
         await finish(pool, event.id, 'no email for this event type');
+        stats.skipped++;
+        continue;
+      }
+      if (event.payload.email === null) {
+        // an account created with a phone number has no email: nothing to send
+        await finish(pool, event.id, 'no email address on this order');
         stats.skipped++;
         continue;
       }

@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  normalizeVnMobile,
   OTP_LENGTH,
   phoneOtpSentSchema,
   phoneStatusSchema,
@@ -10,11 +11,13 @@ import {
 import { useEffect, useState, type FormEvent } from 'react';
 import { useToast } from '@/components/ui/toast';
 import { useAction } from '@/features/account/use-action';
+import { usePhoneProof } from '@/features/account/use-phone-proof';
 import { useCustomer } from '@/lib/customer-client';
 
-/** Phone number of the account, verified with a one-time code sent over Zalo. */
+/** Phone number of the account, verified with a one-time code sent as a message (Zalo or SMS). */
 export function PhoneVerification() {
   const { request } = useCustomer();
+  const proof = usePhoneProof();
   const toast = useToast();
   const load = useAction();
   const ask = useAction();
@@ -40,21 +43,37 @@ export function PhoneVerification() {
 
   const sendCode = async (e?: FormEvent) => {
     e?.preventDefault();
-    const res = await ask.run(async () =>
-      phoneOtpSentSchema.parse(await request('POST', '/me/phone/otp', { phone })),
-    );
+    const res = await ask.run(async (): Promise<PhoneOtpSent> => {
+      if (proof.firebase) {
+        const n = normalizeVnMobile(phone);
+        if (!n)
+          throw Object.assign(
+            new Error(
+              'Số điện thoại không hợp lệ: cần số di động Việt Nam (đầu số 03, 05, 07, 08, 09)',
+            ),
+            { handled: true },
+          );
+        await proof.send(n);
+        return { phone: phone.trim(), expiresInSeconds: 0, resendAfterSeconds: 60 };
+      }
+      return phoneOtpSentSchema.parse(await request('POST', '/me/phone/otp', { phone }));
+    });
     if (res) {
       setSent(res);
       setCode('');
       setWait(res.resendAfterSeconds);
-      toast(`Đã gửi mã đến Zalo của số ${res.phone}`);
+      toast(`Đã gửi mã đến số ${res.phone}`);
     }
   };
   const verify = async (e: FormEvent) => {
     e.preventDefault();
-    const res = await check.run(async () =>
-      phoneStatusSchema.parse(await request('POST', '/me/phone/verify', { code })),
-    );
+    const res = await check.run(async () => {
+      if (proof.firebase) {
+        const idToken = await proof.confirm(code);
+        return phoneStatusSchema.parse(await request('POST', '/me/phone/firebase', { idToken }));
+      }
+      return phoneStatusSchema.parse(await request('POST', '/me/phone/verify', { code }));
+    });
     if (res) {
       setStatus(res);
       setSent(null);
@@ -79,6 +98,7 @@ export function PhoneVerification() {
   return (
     <section className="panel account-form" aria-labelledby="phone-title">
       <h2 id="phone-title">Số điện thoại</h2>
+      <div ref={proof.holder} />
       {!status ? (
         <p>{load.error ?? 'Đang tải…'}</p>
       ) : showVerified ? (
@@ -103,7 +123,7 @@ export function PhoneVerification() {
         <form onSubmit={sendCode}>
           <p className="phone-lead">
             Xác thực số điện thoại để nhận thông báo đơn hàng và giữ tài khoản an toàn. Mã gồm{' '}
-            {OTP_LENGTH} chữ số sẽ được gửi qua Zalo.
+            {OTP_LENGTH} chữ số sẽ được gửi bằng tin nhắn.
           </p>
           <label className="field">
             <span>Số điện thoại</span>
@@ -117,7 +137,7 @@ export function PhoneVerification() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
-            <small>Số phải đang dùng Zalo.</small>
+            <small>Số di động Việt Nam đang sử dụng.</small>
           </label>
           {ask.error && (
             <p className="form-error" role="alert">
@@ -125,7 +145,11 @@ export function PhoneVerification() {
             </p>
           )}
           <div className="phone-actions">
-            <button className="btn btn-dark" type="submit" disabled={ask.pending || !phone.trim()}>
+            <button
+              className="btn btn-dark"
+              type="submit"
+              disabled={ask.pending || !phone.trim() || proof.firebase === undefined}
+            >
               {ask.pending ? 'Đang gửi…' : 'Gửi mã xác thực'}
             </button>
             {changing && (
@@ -142,8 +166,9 @@ export function PhoneVerification() {
       ) : (
         <form onSubmit={verify}>
           <p className="phone-lead">
-            Chúng tôi đã gửi mã đến Zalo của số <strong>{sent.phone}</strong>. Mã có hiệu lực{' '}
-            {Math.round(sent.expiresInSeconds / 60)} phút.
+            Chúng tôi đã gửi mã bằng tin nhắn đến số <strong>{sent.phone}</strong>.
+            {sent.expiresInSeconds > 0 &&
+              ` Mã có hiệu lực ${Math.round(sent.expiresInSeconds / 60)} phút.`}
           </p>
           {sent.devCode && (
             <p className="phone-dev" role="note">

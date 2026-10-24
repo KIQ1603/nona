@@ -10,7 +10,7 @@ export default async function ProfilePage() {
       <h1>Hồ sơ</h1>
       <p className="lead">Quản lý thông tin tài khoản NONA của bạn.</p>
       <ProfileForm fullName={me.fullName} email={me.email} />
-      <EmailVerification />
+      {me.email && <EmailVerification />}
       <PhoneVerification />
       <div className="panel">
         <h2>Đơn hàng</h2>

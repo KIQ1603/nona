@@ -34,7 +34,7 @@ export interface OrderRow {
   id: string;
   public_code: string;
   user_id: string | null;
-  customer_email: string;
+  customer_email: string | null;
   status: OrderStatus;
   payment_method: Provider;
   subtotal_vnd: string;
@@ -72,7 +72,7 @@ export interface PaymentRow {
 export interface NewOrder {
   code: string;
   userId: string | null;
-  email: string;
+  email: string | null;
   status: OrderStatus;
   paymentMethod: Provider;
   subtotalVnd: number;

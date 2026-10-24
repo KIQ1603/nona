@@ -25,7 +25,7 @@ export class MfaController {
   @HttpCode(200)
   setup(@CurrentAuth() auth: AuthContext) {
     this.staffOnly(auth);
-    return this.mfa.beginEnrolment(auth.userId, auth.email);
+    return this.mfa.beginEnrolment(auth.userId, auth.email ?? auth.fullName);
   }
 
   @Post('confirm')

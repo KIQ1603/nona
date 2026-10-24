@@ -6,13 +6,18 @@ import { cleanup } from './jobs/cleanup.js';
 import { callInternalJob } from './jobs/internal.js';
 import { processOutbox } from './jobs/outbox.js';
 import { logger } from './logger.js';
-import { SimulatorSmsSender, ZaloZnsSender } from './sms.js';
+import { DEFAULT_ESMS_TEMPLATE, EsmsSender, SimulatorSmsSender, ZaloZnsSender } from './sms.js';
 import { ZaloTokenProvider } from './zalo-token.js';
 
 const config = loadConfig();
 const pool = new pg.Pool({ connectionString: config.databaseUrl, max: 4 });
 const mailer = new SmtpMailer(config.smtp);
 function buildSmsSender() {
+  if (config.smsMode === 'esms')
+    return new EsmsSender({
+      ...config.esms,
+      template: config.esms.template ?? DEFAULT_ESMS_TEMPLATE,
+    });
   if (config.smsMode !== 'zalo') return new SimulatorSmsSender();
   const { oauth, staticAccessToken, ...rest } = config.zalo;
   if (oauth) {

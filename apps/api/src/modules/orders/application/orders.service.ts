@@ -158,14 +158,15 @@ export class OrdersService {
 
   async place(
     owner: Owner | null,
-    user: { id: string; email: string } | null,
+    user: { id: string; email: string | null } | null,
     key: string,
     input: PlaceOrderInput,
     ip?: string,
   ) {
     if (!owner) throw new AppError('CART_EMPTY', 409, 'Giỏ hàng đang trống.');
-    const email = user?.email ?? input.contactEmail;
-    if (!email)
+    // a signed-in account may have no email (phone sign-up): then the order simply has none
+    const email = user ? (user.email ?? input.contactEmail ?? null) : (input.contactEmail ?? null);
+    if (!user && !email)
       throw AppError.validation({
         issues: [
           { path: 'contactEmail', message: 'Vui lòng nhập email để nhận xác nhận đơn hàng' },
@@ -183,8 +184,8 @@ export class OrdersService {
   private async placeInTransaction(
     c: pg.PoolClient,
     owner: Owner,
-    user: { id: string; email: string } | null,
-    email: string,
+    user: { id: string; email: string | null } | null,
+    email: string | null,
     key: string,
     input: PlaceOrderInput,
     ip: string,
@@ -308,7 +309,7 @@ export class OrdersService {
     for (const l of lines) {
       // Customised items carry an immutable snapshot of the approved design (readable names, price breakdown).
       const customization = l.designVersionId
-        ? await this.designs.snapshot(c, l.designVersionId, email)
+        ? await this.designs.snapshot(c, l.designVersionId, email ?? undefined)
         : null;
       await this.repo.insertItem(c, order.id, l, customization);
     }
@@ -417,7 +418,7 @@ export class OrdersService {
     c: pg.PoolClient,
     o: {
       userId: string | null;
-      email: string;
+      email: string | null;
       pricing: PricingResult;
       address: Record<string, string>;
       note: string | null;

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { normalizeVnMobile } from './account';
 
 export const USER_ROLES = [
   'CUSTOMER',
@@ -59,20 +60,26 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
 };
 
 export const loginSchema = z.object({
-  /** An address, or a bare username such as `admin` (short for admin@local). Login only looks the value up, so it is not held to full email rules. */
+  /** Email, mobile number, or a bare username such as `admin` (short for admin@local). Login only looks the value up. */
   email: z
     .string()
     .trim()
     .toLowerCase()
     .max(254)
-    .transform((v) => (v.includes('@') ? v : `${v}@local`))
-    .pipe(z.string().regex(/^[^\s@]+@[^\s@]+$/, 'Email không hợp lệ')),
+    .transform((v) => {
+      const phone = /^[+\d\s.-]+$/.test(v) ? normalizeVnMobile(v) : null;
+      return phone ?? (v.includes('@') ? v : `${v}@local`);
+    })
+    .pipe(
+      z.string().regex(/^(\+84[0-9]{9}|[^\s@]+@[^\s@]+)$/, 'Email hoặc số điện thoại không hợp lệ'),
+    ),
   password: z.string().min(1).max(200),
 });
 
 export const meSchema = z.object({
   id: z.string(),
-  email: z.string(),
+  /** null for an account created with a phone number only. */
+  email: z.string().nullable(),
   fullName: z.string(),
   role: z.enum(USER_ROLES),
   permissions: z.array(z.enum(PERMISSIONS)),

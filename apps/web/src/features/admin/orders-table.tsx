@@ -10,7 +10,7 @@ import { StatusMenu, type StatusSubject } from './order-status';
 
 export interface OrderRow extends StatusSubject {
   code: string;
-  customerEmail: string;
+  customerEmail: string | null;
   customerName: string;
   totalVnd: number;
   itemCount: number;
@@ -131,7 +131,7 @@ export function OrdersTable({ initial }: { initial: OrderRow[] }) {
               <td className="wrap">
                 {o.customerName}
                 <br />
-                <small>{o.customerEmail}</small>
+                <small>{o.customerEmail ?? 'Không có email'}</small>
               </td>
               <td>
                 <StatusMenu order={o} onChanged={update(o.id)} writable={writable} />

@@ -30,8 +30,25 @@ const baseSchema = z.object({
   MFA_ENCRYPTION_KEY: z.string().optional(),
   /** Reverse proxies in front of the API (each one appends to X-Forwarded-For). Direct = 0, one proxy = 1, Vercel rewrite + a host proxy (Railway, Cloudflare, Nginx) = 2. Wrong values break per-IP rate limits. */
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
-  /** 'simulator' prints OTP codes instead of sending them (development only); 'zalo' sends through Zalo ZNS (worker). */
-  SMS_MODE: z.enum(['simulator', 'zalo']).default('simulator'),
+  /** Sign in with Google (optional). Both must be set to switch it on. Redirect URI to register: `<WEB_ORIGIN>/api/auth/google/callback`. */
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_AUTH_URL: z.string().url().default('https://accounts.google.com/o/oauth2/v2/auth'),
+  GOOGLE_TOKEN_URL: z.string().url().default('https://oauth2.googleapis.com/token'),
+  /** 'simulator' prints OTP codes instead of sending them (development only); 'zalo' sends through Zalo ZNS and 'esms' through eSMS.vn SMS (both in the worker). */
+  SMS_MODE: z.enum(['simulator', 'zalo', 'esms']).default('simulator'),
+  /** Firebase Phone Auth (optional): verifies phone numbers without any SMS provider of ours. All four set = on. The last three are the PUBLIC web config of the Firebase app. */
+  FIREBASE_PROJECT_ID: z.string().optional(),
+  FIREBASE_API_KEY: z.string().optional(),
+  FIREBASE_AUTH_DOMAIN: z.string().optional(),
+  FIREBASE_APP_ID: z.string().optional(),
+  /** Google's public keys that sign Firebase ID tokens (override only in tests). */
+  FIREBASE_JWKS_URL: z
+    .string()
+    .url()
+    .default(
+      'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com',
+    ),
   /** Keys the hash of one-time codes. Required in production (>= 24 chars). */
   OTP_SECRET: z.string().min(24).optional(),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
@@ -44,7 +61,9 @@ export const envSchema = baseSchema
     const fail = (path: string, message: string) =>
       ctx.addIssue({ code: 'custom', path: [path], message });
     if (e.NODE_ENV === 'production') {
-      if (e.SMS_MODE !== 'zalo') fail('SMS_MODE', 'the SMS simulator must not run in production');
+      // with Firebase on, no code is ever queued for sending, so the simulator never swallows one
+      if (e.SMS_MODE === 'simulator' && !e.FIREBASE_PROJECT_ID)
+        fail('SMS_MODE', 'the SMS simulator must not run in production');
       if (!e.OTP_SECRET) fail('OTP_SECRET', 'is required in production');
       if (e.PAYMENTS_MODE !== 'vnpay')
         fail('PAYMENTS_MODE', 'the payment simulator must not run in production');
@@ -67,6 +86,17 @@ export const envSchema = baseSchema
       ] as const)
         if (!e[k]) fail(k, 'is required when PAYMENTS_MODE=vnpay');
     }
+    const fb = [
+      e.FIREBASE_PROJECT_ID,
+      e.FIREBASE_API_KEY,
+      e.FIREBASE_AUTH_DOMAIN,
+      e.FIREBASE_APP_ID,
+    ];
+    if (fb.some(Boolean) && !fb.every(Boolean))
+      fail(
+        'FIREBASE_PROJECT_ID',
+        'Firebase needs FIREBASE_PROJECT_ID, FIREBASE_API_KEY, FIREBASE_AUTH_DOMAIN and FIREBASE_APP_ID together',
+      );
     if (e.MFA_ENCRYPTION_KEY && Buffer.from(e.MFA_ENCRYPTION_KEY, 'base64').length !== 32)
       fail('MFA_ENCRYPTION_KEY', 'must be 32 bytes, base64-encoded');
   })

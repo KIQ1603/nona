@@ -25,7 +25,7 @@ interface CustomerApi {
     options?: { idempotencyKey?: string },
   ) => Promise<T>;
   upload: <T>(path: string, form: FormData) => Promise<T>;
-  signIn: (kind: 'login' | 'register', body: Record<string, unknown>) => Promise<MeDto>;
+  signIn: (kind: 'login', body: Record<string, unknown>) => Promise<MeDto>;
   signOut: () => Promise<void>;
   setUser: (me: MeDto) => void;
 }
