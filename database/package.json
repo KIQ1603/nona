@@ -8,6 +8,8 @@
     "migrate:deploy": "tsx src/cli.ts migrate",
     "seed": "tsx --env-file=../.env src/cli.ts seed",
     "create-staff": "tsx --env-file=../.env src/cli.ts create-staff",
+    "bootstrap": "tsx --env-file=../.env src/cli.ts bootstrap",
+    "bootstrap:deploy": "tsx src/cli.ts bootstrap",
     "reset": "tsx --env-file=../.env src/cli.ts reset",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",

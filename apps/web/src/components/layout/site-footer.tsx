@@ -3,27 +3,43 @@ import Link from 'next/link';
 import { SITE } from '@/lib/site';
 import { Brand } from './brand';
 
-/** Footer links come from the admin-managed contact channels, never from code. */
+/** Contact details stay admin-managed; only the storefront information architecture is fixed. */
 export function SiteFooter({ contact }: { contact: ContactSettings }) {
-  const channels = contact.channels.filter((c) => c.enabled);
+  const channels = contact.channels.filter((channel) => channel.enabled);
   return (
     <footer className="site-footer">
-      <Brand />
-      <p>{SITE.tagline}</p>
-      <nav className="footer-links" aria-label="Liên hệ và mạng xã hội">
-        {channels.map((c) => (
+      <div className="footer-brand-column">
+        <Brand />
+        <p>{contact.description || SITE.tagline}</p>
+      </div>
+      <nav className="footer-links" aria-label="Liên kết nhanh">
+        <strong>Liên kết nhanh</strong>
+        <Link href="/trang-chu">Trang chủ</Link>
+        <Link href="/">Giới thiệu</Link>
+        <Link href="/shop">Sản phẩm</Link>
+        <Link href="/thiet-ke-non">Tự thiết kế</Link>
+      </nav>
+      <div className="footer-contact">
+        <strong>Liên hệ</strong>
+        {channels.slice(0, 4).map((channel) => (
           <a
-            key={c.id}
-            href={c.url}
+            key={channel.id}
+            href={channel.url}
             rel="noopener noreferrer"
-            target={c.url.startsWith('https://') ? '_blank' : undefined}
+            target={channel.url.startsWith('https://') ? '_blank' : undefined}
           >
-            {c.label}
+            {channel.label}
           </a>
         ))}
-        <Link href="/lien-he">Liên hệ</Link>
-      </nav>
-      <small>© {new Date().getFullYear()} NONA. Được làm với tình yêu tại Việt Nam.</small>
+        {contact.address && <span>{contact.address}</span>}
+      </div>
+      <small>
+        © {new Date().getFullYear()} Sắc Chằm. {SITE.tagline}
+      </small>
+      <div className="footer-legal">
+        <Link href="/lien-he">Chính sách bảo mật</Link>
+        <Link href="/lien-he">Điều khoản sử dụng</Link>
+      </div>
     </footer>
   );
 }

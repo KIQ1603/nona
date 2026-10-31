@@ -64,25 +64,31 @@ export class S3Storage implements ObjectStorage {
     }
     // Product images and published-article images are public by design; designs/ stays private and
     // uploads remain write-protected by credentials. Production buckets need the same policy.
-    await this.client.send(
-      new PutBucketPolicyCommand({
-        Bucket,
-        Policy: JSON.stringify({
-          Version: '2012-10-17',
-          Statement: [
-            {
-              Effect: 'Allow',
-              Principal: '*',
-              Action: ['s3:GetObject'],
-              Resource: [
-                `arn:aws:s3:::${Bucket}/products/*`,
-                `arn:aws:s3:::${Bucket}/articles/*`,
-                `arn:aws:s3:::${Bucket}/custom/*`,
-              ],
-            },
-          ],
+    // Not every S3-compatible store supports bucket policies (Cloudflare R2 does not: there the bucket is made
+    // public in its dashboard), so a refusal here must not stop the API from starting.
+    try {
+      await this.client.send(
+        new PutBucketPolicyCommand({
+          Bucket,
+          Policy: JSON.stringify({
+            Version: '2012-10-17',
+            Statement: [
+              {
+                Effect: 'Allow',
+                Principal: '*',
+                Action: ['s3:GetObject'],
+                Resource: [
+                  `arn:aws:s3:::${Bucket}/products/*`,
+                  `arn:aws:s3:::${Bucket}/articles/*`,
+                  `arn:aws:s3:::${Bucket}/custom/*`,
+                ],
+              },
+            ],
+          }),
         }),
-      }),
-    );
+      );
+    } catch {
+      /* policy not supported or not allowed: the bucket's public access is configured at the provider */
+    }
   }
 }

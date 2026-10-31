@@ -82,7 +82,7 @@ export async function resetAll(pool: pg.Pool, app?: NestExpressApplication) {
     `INSERT INTO site_settings (key, value, version) VALUES
        ('announcement', '{"enabled": true, "text": "Miễn phí vận chuyển cho đơn từ 600.000đ", "linkUrl": null}', 1),
        ('shipping', '{"freeShippingThresholdVnd": 600000, "flatFeeVnd": 30000, "zones": []}', 1),
-       ('checkout', '{"paymentWindowMinutes": 30, "requirePhoneVerification": false}', 1),
+       ('checkout', '{"paymentWindowMinutes": 30, "requirePhoneVerification": false, "requireManualConfirmation": false}', 1),
        ('custom', $1::jsonb, 1),
        ('landing', '{"hero":{"eyebrow":"","titleTop":"NONA","titleAccent":"Nón Việt","text":"","primaryCta":"Khám phá","secondaryCta":"Câu chuyện"},"story":{"eyebrow":"Câu chuyện","title":{"before":"","accent":"","after":""},"text":"","bigWord":"","badgeText":"","imageUrl":null,"imageAlt":"","stats":[]},"process":{"eyebrow":"Quy trình","title":{"before":"","accent":"","after":""},"steps":[]},"testimonials":{"eyebrow":"Khách hàng","items":[]},"order":{"eyebrow":"Đặt hàng","titleTop":"","titleAccent":"","titleBottom":"","text":""}}', 1),
        ('contact', '{"floatingEnabled": true, "headline": "Liên hệ NONA", "description": "", "address": "", "hours": "", "channels": []}', 1)

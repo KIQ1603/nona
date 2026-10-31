@@ -16,7 +16,7 @@ export function productJsonLd(product: ProductDetail) {
     description: product.description ?? product.summary ?? undefined,
     image: product.images.map((i) => i.url),
     sku: product.variants[0]?.sku,
-    brand: { '@type': 'Brand', name: 'NONA' },
+    brand: { '@type': 'Brand', name: 'Sắc Chằm' },
     offers: product.variants.map((v) => ({
       '@type': 'Offer',
       url,

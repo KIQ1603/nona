@@ -6,6 +6,7 @@ import { useState, type FormEvent } from 'react';
 import { usePaged } from '@/components/admin/client-pagination';
 import { useAction } from '@/components/admin/use-action';
 import { useToast } from '@/components/ui/toast';
+import { Dropdown } from '@/components/ui/dropdown';
 import { useAdmin } from '@/lib/admin-client';
 
 export function CategoryManager({ initial }: { initial: AdminCategory[] }) {
@@ -19,11 +20,27 @@ export function CategoryManager({ initial }: { initial: AdminCategory[] }) {
     name: '',
     slug: '',
     description: '',
+    parentId: '',
     sortOrder: initial.length,
   });
   const [editing, setEditing] = useState<string | null>(null);
-  const [edit, setEdit] = useState({ name: '', slug: '', description: '', sortOrder: 0 });
+  const [edit, setEdit] = useState({
+    name: '',
+    slug: '',
+    description: '',
+    parentId: '',
+    sortOrder: 0,
+  });
   const writable = can('catalog:write');
+  const typeName = new Map(items.map((c) => [c.id, c.name]));
+  /** The product types a category can sit under (a type itself, or a group, may only sit under a type). */
+  const parentOptions = (selfId?: string) => [
+    { value: '', label: '— Đây là một loại sản phẩm —' },
+    ...items
+      .filter((c) => !c.parentId && c.id !== selfId)
+      .map((c) => ({ value: c.id, label: c.name })),
+  ];
+  const hasGroups = (id: string) => items.some((c) => c.parentId === id);
   const reload = async () =>
     setItems((await request<{ items: AdminCategory[] }>('GET', '/admin/categories')).items);
 
@@ -34,13 +51,14 @@ export function CategoryManager({ initial }: { initial: AdminCategory[] }) {
         name: draft.name,
         ...(draft.slug ? { slug: draft.slug } : {}),
         description: draft.description || null,
+        parentId: draft.parentId || null,
         sortOrder: draft.sortOrder,
       });
       await reload();
       return true;
     });
     if (ok) {
-      setDraft({ name: '', slug: '', description: '', sortOrder: items.length + 1 });
+      setDraft({ name: '', slug: '', description: '', parentId: '', sortOrder: items.length + 1 });
       toast('Đã thêm danh mục');
       router.refresh();
     }
@@ -51,6 +69,7 @@ export function CategoryManager({ initial }: { initial: AdminCategory[] }) {
         name: edit.name,
         slug: edit.slug,
         description: edit.description || null,
+        parentId: edit.parentId || null,
         sortOrder: edit.sortOrder,
       });
       setItems(res.items);
@@ -84,6 +103,7 @@ export function CategoryManager({ initial }: { initial: AdminCategory[] }) {
           <thead>
             <tr>
               <th>Tên</th>
+              <th>Loại</th>
               <th>Slug</th>
               <th>Mô tả</th>
               <th className="num">Thứ tự</th>
@@ -101,6 +121,18 @@ export function CategoryManager({ initial }: { initial: AdminCategory[] }) {
                       value={edit.name}
                       onChange={(e) => setEdit({ ...edit, name: e.target.value })}
                     />
+                  </td>
+                  <td>
+                    {hasGroups(c.id) ? (
+                      <span className="muted">Loại sản phẩm (có nhóm con)</span>
+                    ) : (
+                      <Dropdown
+                        ariaLabel="Thuộc loại"
+                        value={edit.parentId}
+                        onChange={(v) => setEdit({ ...edit, parentId: v })}
+                        options={parentOptions(c.id)}
+                      />
+                    )}
                   </td>
                   <td>
                     <input
@@ -144,8 +176,10 @@ export function CategoryManager({ initial }: { initial: AdminCategory[] }) {
               ) : (
                 <tr key={c.id}>
                   <td>
+                    {c.parentId ? <span className="muted">↳ </span> : null}
                     <strong>{c.name}</strong>
                   </td>
+                  <td>{c.parentId ? typeName.get(c.parentId) : 'Loại sản phẩm'}</td>
                   <td>{c.slug}</td>
                   <td className="wrap">{c.description ?? '—'}</td>
                   <td className="num">{c.sortOrder}</td>
@@ -161,6 +195,7 @@ export function CategoryManager({ initial }: { initial: AdminCategory[] }) {
                               name: c.name,
                               slug: c.slug,
                               description: c.description ?? '',
+                              parentId: c.parentId ?? '',
                               sortOrder: c.sortOrder,
                             });
                           }}
@@ -169,8 +204,14 @@ export function CategoryManager({ initial }: { initial: AdminCategory[] }) {
                         </button>
                         <button
                           className="btn btn-outline btn-sm"
-                          disabled={c.productCount > 0}
-                          title={c.productCount > 0 ? 'Danh mục đang có sản phẩm' : undefined}
+                          disabled={c.productCount > 0 || hasGroups(c.id)}
+                          title={
+                            c.productCount > 0
+                              ? 'Danh mục đang có sản phẩm'
+                              : hasGroups(c.id)
+                                ? 'Loại sản phẩm đang có nhóm con'
+                                : undefined
+                          }
                           onClick={() => remove(c)}
                         >
                           Xóa
@@ -201,6 +242,19 @@ export function CategoryManager({ initial }: { initial: AdminCategory[] }) {
       {writable && (
         <form id="new-category" className="admin-card" onSubmit={create} style={{ marginTop: 18 }}>
           <h2>Thêm danh mục</h2>
+          <div className="field">
+            <span>Thuộc loại</span>
+            <Dropdown
+              ariaLabel="Thuộc loại"
+              value={draft.parentId}
+              onChange={(v) => setDraft({ ...draft, parentId: v })}
+              options={parentOptions()}
+            />
+            <small>
+              Để “Đây là một loại sản phẩm” nếu muốn tạo loại mới (Nón lá, Móc khóa, Kẹp tóc…); chọn
+              một loại để tạo nhóm con bên trong nó.
+            </small>
+          </div>
           <div className="form-row">
             <label className="field">
               <span>Tên *</span>

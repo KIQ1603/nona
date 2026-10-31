@@ -27,6 +27,7 @@ const when = (iso: string) =>
   new Date(iso).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' });
 
 const COD_FLOW: OrderStatus[] = [
+  'AWAITING_CONFIRMATION',
   'CONFIRMED',
   'PROCESSING',
   'READY_TO_SHIP',
@@ -56,7 +57,9 @@ const ACTOR: Record<string, string> = {
 };
 
 function Stepper({ order }: { order: AdminOrderDetail }) {
-  const flow = order.paymentMethod === 'VNPAY' ? ONLINE_FLOW : COD_FLOW;
+  const flow = (order.paymentMethod === 'VNPAY' ? ONLINE_FLOW : COD_FLOW).filter(
+    (s) => s !== 'AWAITING_CONFIRMATION' || order.history.some((h) => h.status === s),
+  );
   if (OFF_PATH[order.status])
     return (
       <div

@@ -14,6 +14,7 @@ export const STATUS_TONE: Record<OrderStatus, string> = {
   PAYMENT_FAILED: 'red',
   EXPIRED: 'red',
   PAID: 'blue',
+  AWAITING_CONFIRMATION: 'amber',
   CONFIRMED: 'sand',
   PROCESSING: 'blue',
   READY_TO_SHIP: 'teal',
@@ -28,6 +29,7 @@ export const STATUS_TONE: Record<OrderStatus, string> = {
 
 /** Verb-style labels for the next step (what the staff member does). */
 export const ACTION_LABEL: Partial<Record<OrderStatus, string>> = {
+  CONFIRMED: 'Xác nhận đơn',
   PROCESSING: 'Bắt đầu chuẩn bị',
   READY_TO_SHIP: 'Sẵn sàng giao',
   SHIPPING: 'Giao cho vận chuyển',

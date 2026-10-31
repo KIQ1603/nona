@@ -6,7 +6,7 @@ import { ApiError } from './api-client';
 import { API_URL } from './env';
 
 /** Only same-site relative paths may be used as a post-login destination (blocks open redirects). */
-export function safeNext(value: string | string[] | undefined, fallback = '/tai-khoan'): string {
+export function safeNext(value: string | string[] | undefined, fallback = '/trang-chu'): string {
   const v = Array.isArray(value) ? value[0] : value;
   return v && v.startsWith('/') && !v.startsWith('//') && !v.includes('\\') ? v : fallback;
 }

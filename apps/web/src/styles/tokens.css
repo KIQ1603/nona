@@ -1,20 +1,20 @@
-/* NONA design tokens — the single place for brand values. */
+/* Sắc Chằm storefront design tokens — the single place for brand values. */
 :root {
-  --color-ink: #1f3d2b;
-  --color-ink-soft: #3b4a35;
-  --color-cream: #f7efdc;
-  --color-cream-deep: #f3e3bd;
-  --color-paper: #fffaf0;
-  --color-canvas: #fbf5e6;
-  --color-red: #b5442a;
-  --color-red-deep: #96351f;
-  --color-gold: #e3b865;
-  --color-gold-soft: #f3dba2;
-  --color-muted: #5b6652;
-  --color-line: rgba(31, 61, 43, 0.16);
-  --color-line-soft: rgba(31, 61, 43, 0.09);
-  --color-mint: #f3ebd2;
-  --color-warning: #8a5a00;
+  --color-ink: #64151a;
+  --color-ink-soft: #562e2c;
+  --color-cream: #fff2e8;
+  --color-cream-deep: #f2c4b2;
+  --color-paper: #fffaf6;
+  --color-canvas: #fff7f0;
+  --color-red: #7a171d;
+  --color-red-deep: #5d0e14;
+  --color-gold: #c98762;
+  --color-gold-soft: #f3cbb8;
+  --color-muted: #775d57;
+  --color-line: rgba(100, 21, 26, 0.2);
+  --color-line-soft: rgba(100, 21, 26, 0.1);
+  --color-mint: #f9e5dc;
+  --color-warning: #925514;
 
   --font-display: var(--font-playfair), 'Playfair Display', Georgia, serif;
   --font-body: var(--font-be-vietnam), 'Be Vietnam Pro', system-ui, sans-serif;
@@ -34,9 +34,9 @@
   --radius-xl: 34px;
   --radius-pill: 999px;
 
-  --shadow-soft: 0 10px 32px rgba(35, 49, 42, 0.05);
-  --shadow-lift: 0 20px 44px rgba(35, 49, 42, 0.1);
-  --shadow-panel: 0 18px 55px rgba(35, 49, 42, 0.07);
+  --shadow-soft: 0 10px 32px rgba(104, 36, 33, 0.07);
+  --shadow-lift: 0 20px 44px rgba(104, 36, 33, 0.13);
+  --shadow-panel: 0 18px 55px rgba(104, 36, 33, 0.1);
 
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
   --header-h: 82px;

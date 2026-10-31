@@ -18,6 +18,7 @@ import { MonthlyOrdersChart, RevenuePanel } from '@/features/admin/dashboard/rev
 const STATUS_COLOR: Record<string, string> = {
   PENDING_PAYMENT: '#e3b865',
   PAID: '#3a7fb5',
+  AWAITING_CONFIRMATION: '#e0a030',
   CONFIRMED: '#9a8650',
   PROCESSING: '#2f6b9a',
   READY_TO_SHIP: '#17806f',

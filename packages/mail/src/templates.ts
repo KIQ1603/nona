@@ -25,6 +25,10 @@ const STATUS_COPY: Record<string, { subject: string; lead: string }> = {
     subject: 'đã giao thành công',
     lead: 'Đơn hàng của bạn đã được giao. Cảm ơn bạn đã chọn NONA!',
   },
+  CONFIRMED: {
+    subject: 'đã được xác nhận',
+    lead: 'Cửa hàng đã xác nhận đơn hàng của bạn và sẽ sớm chuẩn bị giao.',
+  },
   CANCELLED: { subject: 'đã được hủy', lead: 'Đơn hàng của bạn đã được hủy.' },
   REFUND_PENDING: {
     subject: 'đang được hoàn tiền',
@@ -55,6 +59,7 @@ interface OrderPlaced {
   discountVnd: number;
   shippingFeeVnd: number;
   totalVnd: number;
+  awaitingConfirmation?: boolean;
   address: {
     fullName: string;
     phone: string;
@@ -149,6 +154,12 @@ export function renderEmail(
       `Xin chào ${p.customerName},`,
       '',
       `Cảm ơn bạn đã đặt hàng tại NONA. Mã đơn hàng: ${group(p.orderCode)}`,
+      ...(p.awaitingConfirmation
+        ? [
+            '',
+            'Đơn hàng đang chờ cửa hàng xác nhận. Chúng tôi sẽ liên hệ qua số điện thoại bạn đã nhập để xác nhận trước khi chuẩn bị giao.',
+          ]
+        : []),
       '',
       ...lines,
       '',
@@ -170,13 +181,19 @@ export function renderEmail(
       .join('');
     const html = layout(
       'Cảm ơn bạn đã đặt hàng!',
-      `<p>Xin chào ${esc(p.customerName)}, mã đơn hàng của bạn là <strong>${esc(group(p.orderCode))}</strong>.</p>
+      `<p>Xin chào ${esc(p.customerName)}, mã đơn hàng của bạn là <strong>${esc(group(p.orderCode))}</strong>.</p>${p.awaitingConfirmation ? '<p style="background:#fdf1e3;padding:10px 14px;border-radius:10px;font-size:14px"><strong>Đơn hàng đang chờ xác nhận.</strong> Cửa hàng sẽ liên hệ qua số điện thoại bạn đã nhập để xác nhận trước khi chuẩn bị giao.</p>' : ''}
 <table role="presentation" width="100%" style="border-top:1px solid #e6e2d6;border-bottom:1px solid #e6e2d6;margin:14px 0;font-size:14px">${rows}</table>
 <p style="font-size:14px;line-height:1.7">Tạm tính: ${esc(vnd(p.subtotalVnd))}<br>Phí vận chuyển: ${p.shippingFeeVnd === 0 ? 'Miễn phí' : esc(vnd(p.shippingFeeVnd))}<br><strong>Tổng cộng: ${esc(vnd(p.totalVnd))}</strong><br>Thanh toán khi nhận hàng (COD)</p>
 <p style="font-size:14px">Giao đến: ${esc(a.fullName)}, ${esc(a.phone)}, ${esc(a.line1)}, ${esc(a.ward)}, ${esc(a.district)}, ${esc(a.province)}</p>
 <p><a href="${esc(url)}" style="display:inline-block;background:#a83b2e;color:#fff;text-decoration:none;padding:12px 22px;border-radius:99px">Theo dõi đơn hàng</a></p>`,
     );
-    return { subject: `NONA — Xác nhận đơn hàng ${group(p.orderCode)}`, text, html };
+    return {
+      subject: p.awaitingConfirmation
+        ? `NONA — Đã nhận đơn hàng ${group(p.orderCode)}`
+        : `NONA — Xác nhận đơn hàng ${group(p.orderCode)}`,
+      text,
+      html,
+    };
   }
 
   if (type === 'order.status_changed') {

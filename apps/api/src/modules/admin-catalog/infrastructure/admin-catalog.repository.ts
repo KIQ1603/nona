@@ -26,6 +26,7 @@ export const PRODUCT_COLUMNS: Record<string, string> = {
   hatHeightCm: 'hat_height_cm',
   sortWeight: 'sort_weight',
   isCustomizable: 'is_customizable',
+  isFeatured: 'is_featured',
   seoTitle: 'seo_title',
   seoDescription: 'seo_description',
   status: 'status',
@@ -42,6 +43,7 @@ export const CATEGORY_COLUMNS: Record<string, string> = {
   name: 'name',
   slug: 'slug',
   description: 'description',
+  parentId: 'parent_id',
   sortOrder: 'sort_order',
 };
 
@@ -190,6 +192,7 @@ export class AdminCatalogRepository {
       hatHeightCm: p.hat_height_cm === null ? null : Number(p.hat_height_cm),
       sortWeight: p.sort_weight,
       isCustomizable: p.is_customizable,
+      isFeatured: p.is_featured,
       seoTitle: p.seo_title,
       seoDescription: p.seo_description,
       publishedAt: p.published_at ? p.published_at.toISOString() : null,
@@ -221,13 +224,14 @@ export class AdminCatalogRepository {
   async listCategories(): Promise<AdminCategory[]> {
     const { rows } = await this.db.query(
       `SELECT c.*, (SELECT COUNT(*)::int FROM products p WHERE p.category_id = c.id) AS product_count
-       FROM categories c ORDER BY c.sort_order, c.name`,
+       FROM categories c ORDER BY (c.parent_id IS NOT NULL), c.sort_order, c.name`,
     );
     return rows.map((c) => ({
       id: c.id,
       slug: c.slug,
       name: c.name,
       description: c.description,
+      parentId: c.parent_id ?? null,
       sortOrder: c.sort_order,
       productCount: c.product_count,
     }));

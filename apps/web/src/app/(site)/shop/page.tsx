@@ -1,86 +1,65 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { EmptyState } from '@/components/ui/empty-state';
 import { getCategories, getProducts } from '@/features/catalog/api/catalog.api';
-import { CategoryStrip } from '@/features/catalog/components/category-strip';
-import { FilterPanel } from '@/features/catalog/components/filter-panel';
-import { FiltersProvider } from '@/features/catalog/components/filters-context';
-import { Pagination } from '@/features/catalog/components/pagination';
-import { ProductGrid } from '@/features/catalog/components/product-grid';
-import { ShopHero } from '@/features/catalog/components/shop-hero';
-import { Toolbar } from '@/features/catalog/components/toolbar';
+import { NonLaCard } from '@/features/catalog/components/nonla-card';
 import {
   parseShopParams,
-  SHOP_PAGE_SIZE,
   shopHref,
   type RawSearchParams,
 } from '@/features/catalog/lib/shop-params';
 import { CustomCta } from '@/features/custom/custom-cta';
 
 export const metadata: Metadata = {
-  title: 'Shop nón lá',
+  title: 'Sản phẩm',
   description:
-    'Khám phá nón lá thủ công NONA: nón truyền thống, nón họa, nón thời trang và quà tặng mini.',
+    'Khám phá sản phẩm thủ công Sắc Chằm: nón lá, móc khóa, kẹp tóc mang đậm bản sắc Việt.',
   alternates: { canonical: '/shop' },
 };
 
+/**
+ * `/shop` sends shoppers to the first product type (Nón lá…). With `?q=` or `?category=` it is the search /
+ * category result page: one grid with every match.
+ */
 export default async function ShopPage({
   searchParams,
 }: {
   searchParams: Promise<RawSearchParams>;
 }) {
   const params = parseShopParams(await searchParams);
-  const [categories, result] = await Promise.all([
-    getCategories(),
-    getProducts({ ...params, pageSize: SHOP_PAGE_SIZE }),
-  ]);
-  const filtered = Boolean(
-    params.category ||
-    params.q ||
-    params.maxPriceVnd !== undefined ||
-    params.colors.length ||
-    params.styles.length,
-  );
+  const categories = await getCategories();
+  const types = categories.items.filter((c) => c.parentSlug === null);
+  if (!params.q && !params.category && types[0]) redirect(`/shop/${types[0].slug}`);
+
+  const result = await getProducts({
+    category: params.category,
+    q: params.q,
+    sort: params.sort,
+    pageSize: 48,
+  });
+  const current = categories.items.find((c) => c.slug === params.category);
+  const title = params.q ? `Kết quả cho “${params.q}”` : (current?.name ?? 'Sản phẩm');
 
   return (
     <>
-      <ShopHero />
-      <CategoryStrip categories={categories.items} params={params} />
-      <FiltersProvider>
-        <div className="shop-layout">
-          <FilterPanel
-            params={params}
-            priceMinVnd={result.facets.priceMinVnd}
-            priceMaxVnd={result.facets.priceMaxVnd}
-          />
-          <section className="products-area" aria-label="Danh sách sản phẩm">
-            <Toolbar total={result.meta.total} params={params} />
-            {result.items.length > 0 ? (
-              <>
-                <ProductGrid products={result.items} list={params.view === 'list'} />
-                <Pagination
-                  page={result.meta.page}
-                  totalPages={result.meta.totalPages}
-                  params={params}
-                />
-              </>
-            ) : (
-              <EmptyState title="Chưa tìm thấy chiếc nón phù hợp">
-                <p>
-                  {filtered
-                    ? 'Thử đổi từ khóa hoặc bộ lọc nhé.'
-                    : 'Cửa hàng đang cập nhật sản phẩm.'}
-                </p>
-                {filtered && (
-                  <Link className="btn btn-dark" href={shopHref({})}>
-                    Xóa bộ lọc
-                  </Link>
-                )}
-              </EmptyState>
-            )}
-          </section>
-        </div>
-      </FiltersProvider>
+      <div className="nl">
+        <h1 className="nl-title">{title}</h1>
+        {result.items.length > 0 ? (
+          <div className="nl-grid">
+            {result.items.map((product) => (
+              <NonLaCard key={product.id} product={product} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState title="Chưa tìm thấy sản phẩm phù hợp">
+            <p>Thử đổi từ khóa hoặc danh mục nhé.</p>
+            <Link className="btn btn-dark" href={shopHref({})}>
+              Xem tất cả
+            </Link>
+          </EmptyState>
+        )}
+      </div>
       <CustomCta />
     </>
   );

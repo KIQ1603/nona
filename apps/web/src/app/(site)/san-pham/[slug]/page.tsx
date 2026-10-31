@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const product = await getProduct((await params).slug);
   if (!product) return { title: 'Không tìm thấy sản phẩm' };
   return {
-    title: product.seoTitle?.replace(/\s*\|\s*NONA$/, '') ?? product.name,
+    title: product.seoTitle?.replace(/\s*\|\s*(?:NONA|Sắc Chằm)$/i, '') ?? product.name,
     description: product.seoDescription ?? product.summary ?? undefined,
     alternates: { canonical: `/san-pham/${product.slug}` },
     openGraph: {

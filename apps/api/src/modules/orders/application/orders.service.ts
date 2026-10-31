@@ -289,6 +289,14 @@ export class OrdersService {
     }
 
     const online = input.paymentMethod === 'VNPAY';
+    // COD: staff confirm the order by hand (they check the phone number is real) before it is prepared
+    const awaiting =
+      !online && (await this.settings.getCheckoutRules(c as never)).requireManualConfirmation;
+    const startStatus = online
+      ? 'PENDING_PAYMENT'
+      : awaiting
+        ? 'AWAITING_CONFIRMATION'
+        : 'CONFIRMED';
     const expiresAt = online
       ? new Date(
           Date.now() +
@@ -302,7 +310,7 @@ export class OrdersService {
       address,
       note: input.customerNote?.trim() || null,
       method: input.paymentMethod,
-      status: online ? 'PENDING_PAYMENT' : 'CONFIRMED',
+      status: startStatus,
       paymentExpiresAt: expiresAt,
       couponCode: appliedCoupon?.ok ? appliedCoupon.coupon.code : null,
     });
@@ -390,7 +398,7 @@ export class OrdersService {
       await this.repo.insertHistory(c, {
         orderId: order.id,
         from: null,
-        to: 'CONFIRMED',
+        to: startStatus,
         actorType: user ? 'CUSTOMER' : 'GUEST',
         actorId: user?.id,
         metadata: { ip },
@@ -423,7 +431,7 @@ export class OrdersService {
       address: Record<string, string>;
       note: string | null;
       method: 'COD' | 'VNPAY';
-      status: 'CONFIRMED' | 'PENDING_PAYMENT';
+      status: 'CONFIRMED' | 'AWAITING_CONFIRMATION' | 'PENDING_PAYMENT';
       paymentExpiresAt: Date | null;
       couponCode: string | null;
     },

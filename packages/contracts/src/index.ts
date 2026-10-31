@@ -13,3 +13,4 @@ export * from './money';
 export * from './orders';
 export * from './payments';
 export * from './settings';
+export * from './bubble-letters';

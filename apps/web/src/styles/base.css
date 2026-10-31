@@ -9,10 +9,10 @@ html {
 }
 body {
   margin: 0;
-  color: #24170f;
+  color: #431d1c;
   background:
-    radial-gradient(1100px 600px at 0% -10%, rgba(227, 184, 101, 0.22), transparent 70%),
-    radial-gradient(900px 600px at 100% 0%, rgba(181, 68, 42, 0.07), transparent 70%),
+    radial-gradient(1100px 600px at 0% -10%, rgba(242, 196, 178, 0.3), transparent 70%),
+    radial-gradient(900px 600px at 100% 0%, rgba(122, 23, 29, 0.08), transparent 70%),
     var(--color-canvas);
   font-family: var(--font-body);
   line-height: 1.5;

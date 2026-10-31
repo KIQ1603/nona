@@ -52,3 +52,19 @@ VNPay IPN address: `https://nona-api.onrender.com/v1/webhooks/payments/vnpay`.
 
 ## 5. Updating
 Push to `main`; Render rebuilds and the start script applies new migrations before the API starts (migrations are checksummed and idempotent). Roll back by redeploying the previous commit in Render (do not edit applied migrations).
+
+## First accounts (admin and a sample customer)
+Set `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` and `BOOTSTRAP_USER_EMAIL` / `BOOTSTRAP_USER_PASSWORD` on the service (see `.env.example`). `scripts/render-start.sh` creates them after the migrations, only when they do not exist yet (an existing account, and any password changed later, is never touched), with a verified email so they can sign in at once: the admin at `/admin/login`, the customer at `/dang-nhap`. Change both passwords after the first login. The same commands replace `db:create-staff` for the very first admin.
+
+## Sample content (stickers and hats)
+
+After the first deploy, load the designer stickers and two sample hats through the admin API (both safe to repeat; set the admin credentials you bootstrapped):
+
+```bash
+export API_URL=https://<your-api>.onrender.com WEB_ORIGIN=https://<your-site>.vercel.app
+export ADMIN_EMAIL=... ADMIN_PASSWORD=...
+node scripts/seed-stickers.mjs
+node scripts/seed-products.mjs
+```
+
+The names, prices, stock and pictures are samples; replace them in the admin. Never run `db:seed` against a real database (it truncates the catalogue).

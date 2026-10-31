@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { getCategories, getProducts } from '@/features/catalog/api/catalog.api';
+import { FeaturedRow } from '@/features/catalog/components/type-page';
 import { DesignEditor } from '@/features/custom/design-editor';
 import { getCustomCatalog } from '@/features/custom/custom.api';
 import { MyDesigns } from '@/features/custom/my-designs';
 
 export const metadata: Metadata = {
-  title: 'Thiết kế nón riêng',
-  description: 'NONA Custom: thiết kế chiếc nón độc bản của riêng bạn.',
+  title: 'Tự thiết kế sản phẩm',
+  description: 'Sắc Chằm Custom: tự thiết kế nón lá, móc khóa, kẹp tóc độc bản của riêng bạn.',
 };
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
@@ -18,7 +20,7 @@ export default async function CustomDesignPage({ searchParams }: { searchParams:
   if (!catalog || !catalog.options.enabled || catalog.products.length === 0)
     return (
       <div className="page-simple">
-        <p className="eyebrow">NONA Custom</p>
+        <p className="eyebrow">Sắc Chằm Custom</p>
         <h1>Tạm thời chưa mở</h1>
         <p>
           Dịch vụ thiết kế nón riêng hiện chưa sẵn sàng. Trong lúc chờ đợi, hãy khám phá bộ sưu tập
@@ -29,20 +31,25 @@ export default async function CustomDesignPage({ searchParams }: { searchParams:
         </Link>
       </div>
     );
+  const [featuredRes, firstRes, categories] = await Promise.all([
+    getProducts({ featured: 'true', sort: 'featured', pageSize: 3 }).catch(() => null),
+    getProducts({ sort: 'featured', pageSize: 3 }).catch(() => null),
+    getCategories().catch(() => null),
+  ]);
+  const allTypes = (categories?.items ?? [])
+    .filter((c) => c.parentSlug === null)
+    .map((c) => ({ slug: c.slug, name: c.name }));
+  // nothing flagged as featured yet: show the first products instead of an empty block
+  const featured = featuredRes?.items.length ? featuredRes.items : (firstRes?.items ?? []);
   return (
     <div className="custom-wrap">
-      <header className="custom-head">
-        <p className="eyebrow">NONA Custom</p>
-        <h1>Thiết kế chiếc nón của bạn</h1>
-        <p className="lead">
-          Chọn màu nón và gắn các charm của cửa hàng lên chiếc nón yêu thích, rồi đặt hàng ngay.
-          {catalog.options.requireApproval
-            ? ' NONA sẽ xác nhận thiết kế trước khi nghệ nhân bắt tay vào làm.'
-            : ''}
-        </p>
-      </header>
+      <DesignEditor
+        catalog={catalog}
+        allTypes={allTypes}
+        preselect={{ slug: one(sp.sanpham), variantId: one(sp.v) }}
+      />
+      <FeaturedRow products={featured} />
       <MyDesigns heading="Thiết kế gần đây của bạn" />
-      <DesignEditor catalog={catalog} preselect={{ slug: one(sp.sanpham), variantId: one(sp.v) }} />
     </div>
   );
 }

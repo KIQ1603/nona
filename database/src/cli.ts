@@ -1,7 +1,7 @@
 import { createClient } from './connection.js';
 import { migrate } from './migrate.js';
 import { seed } from './seed.js';
-import { upsertStaff } from './users.js';
+import { bootstrapAccounts, upsertStaff } from './users.js';
 
 const command = process.argv[2];
 const client = createClient();
@@ -32,8 +32,15 @@ try {
     await upsertStaff(client, email, password, name.join(' ') || email, role);
     console.log(`staff account ready: ${email} (${role})`);
   }
-  if (!['migrate', 'seed', 'reset', 'create-staff'].includes(command ?? '')) {
-    throw new Error('usage: cli.ts <migrate|seed|reset|create-staff>');
+  if (command === 'bootstrap') {
+    // creates the first admin and a sample customer from BOOTSTRAP_* variables, only if they do not exist yet
+    const created = await bootstrapAccounts(client);
+    console.log(
+      created.length ? `accounts created: ${created.join(', ')}` : 'accounts already in place',
+    );
+  }
+  if (!['migrate', 'seed', 'reset', 'create-staff', 'bootstrap'].includes(command ?? '')) {
+    throw new Error('usage: cli.ts <migrate|seed|reset|create-staff|bootstrap>');
   }
 } finally {
   await client.end();

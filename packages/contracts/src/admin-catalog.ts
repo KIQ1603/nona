@@ -16,6 +16,8 @@ export const createCategorySchema = z.object({
   name: z.string().trim().min(1).max(80),
   slug: slug.optional(),
   description: optionalText(300),
+  /** The product type this group belongs to; null/absent = this category IS a product type. */
+  parentId: z.string().uuid().nullable().optional(),
   sortOrder: z.number().int().min(0).max(10_000).default(0),
 });
 export const updateCategorySchema = createCategorySchema.partial();
@@ -35,6 +37,8 @@ export const createProductSchema = z.object({
   sortWeight: z.number().int().min(0).max(100_000).default(0),
   /** Customers may design a custom version of this product's variants (NONA Custom). */
   isCustomizable: z.boolean().default(true),
+  /** Shown in the "Sản phẩm nổi bật" block of its product type. */
+  isFeatured: z.boolean().default(false),
   seoTitle: optionalText(160),
   seoDescription: optionalText(300),
 });
@@ -132,6 +136,7 @@ export const adminProductDetailSchema = z.object({
   hatHeightCm: z.number().nullable().default(null),
   sortWeight: z.number().int(),
   isCustomizable: z.boolean().default(false),
+  isFeatured: z.boolean().default(false),
   seoTitle: z.string().nullable(),
   seoDescription: z.string().nullable(),
   publishedAt: z.string().nullable(),
@@ -156,6 +161,7 @@ export const adminCategorySchema = z.object({
   slug: z.string(),
   name: z.string(),
   description: z.string().nullable(),
+  parentId: z.string().nullable().default(null),
   sortOrder: z.number().int(),
   productCount: z.number().int(),
 });

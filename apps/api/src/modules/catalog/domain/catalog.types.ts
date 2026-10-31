@@ -49,6 +49,8 @@ export interface CategoryRecord {
   slug: string;
   name: string;
   description: string | null;
+  /** Slug of the product type this group belongs to; null for a product type itself. */
+  parentSlug: string | null;
   productCount: number;
 }
 

@@ -93,18 +93,52 @@ export const Swatch = ({ hex }: { hex: string }) => (
 export const MotifThumb = ({
   motif,
   src,
+  color = null,
 }: {
-  motif: { path: string | null; imageKey: string | null };
+  motif: { path: string | null; imageKey: string | null; tint?: 'flat' | 'shaded' | 'none' };
   src: (imageKey: string) => string;
-}) =>
-  motif.imageKey ? (
-    <img src={src(motif.imageKey)} alt="" width="100%" height="100%" draggable={false} />
-  ) : motif.path ? (
-    <MotifShape path={motif.path} />
+  /** Palette colour to show the sticker in (null = its own colours / the default ink). */
+  color?: string | null;
+}) => {
+  if (motif.imageKey) {
+    const url = src(motif.imageKey);
+    if (color && motif.tint !== 'none')
+      // flat: a silhouette filled with the colour; shaded: the colour multiplied into the picture so its light stays
+      return (
+        <span
+          className="motif-tint"
+          aria-hidden="true"
+          style={{
+            backgroundColor: color,
+            ...(motif.tint === 'shaded'
+              ? {
+                  backgroundImage: `url(${url})`,
+                  backgroundSize: 'contain',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundBlendMode: 'multiply',
+                }
+              : {}),
+            WebkitMask: `url(${url}) center / contain no-repeat`,
+            mask: `url(${url}) center / contain no-repeat`,
+          }}
+        />
+      );
+    return <img src={url} alt="" width="100%" height="100%" draggable={false} />;
+  }
+  return motif.path ? (
+    <MotifShape path={motif.path} color={motif.tint === 'none' ? null : color} />
   ) : null;
+};
 
-export const MotifShape = ({ path }: { path: string }) => (
+export const MotifShape = ({ path, color = null }: { path: string; color?: string | null }) => (
   <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">
-    <path d={path} fill="#242a27" />
+    <path
+      d={path}
+      fill={color ?? '#242a27'}
+      stroke={color ? 'rgba(60,30,30,.35)' : 'none'}
+      strokeWidth="3"
+      strokeLinejoin="round"
+    />
   </svg>
 );

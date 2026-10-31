@@ -11,6 +11,7 @@ export const ORDER_STATUSES = [
   'PAYMENT_FAILED',
   'EXPIRED',
   'PAID',
+  'AWAITING_CONFIRMATION',
   'CONFIRMED',
   'PROCESSING',
   'READY_TO_SHIP',
@@ -30,6 +31,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   PAYMENT_FAILED: 'Thanh toán thất bại',
   EXPIRED: 'Hết hạn',
   PAID: 'Đã thanh toán',
+  AWAITING_CONFIRMATION: 'Chờ xác nhận',
   CONFIRMED: 'Đã xác nhận',
   PROCESSING: 'Đang chuẩn bị',
   READY_TO_SHIP: 'Sẵn sàng giao',
@@ -48,13 +50,19 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
  */
 export const ORDER_TRANSITIONS: Partial<Record<OrderStatus, readonly OrderStatus[]>> = {
   PENDING_PAYMENT: ['CANCELLED'],
+  // staff check the phone number by hand, then confirm (or cancel) the order
+  AWAITING_CONFIRMATION: ['CONFIRMED', 'CANCELLED'],
   CONFIRMED: ['PROCESSING', 'CANCELLED'],
   PROCESSING: ['READY_TO_SHIP', 'CANCELLED'],
   READY_TO_SHIP: ['SHIPPING', 'CANCELLED'],
   SHIPPING: ['COMPLETED'],
 };
 /** Statuses from which a customer may cancel their own order (before the shop starts preparing it). */
-export const CUSTOMER_CANCELLABLE: readonly OrderStatus[] = ['PENDING_PAYMENT', 'CONFIRMED'];
+export const CUSTOMER_CANCELLABLE: readonly OrderStatus[] = [
+  'PENDING_PAYMENT',
+  'AWAITING_CONFIRMATION',
+  'CONFIRMED',
+];
 
 export const PAYMENT_METHODS = ['COD', 'VNPAY'] as const;
 export const PAYMENT_STATUSES = ['PENDING', 'PAID', 'FAILED', 'CANCELLED', 'REFUNDED'] as const;

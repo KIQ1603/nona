@@ -16,7 +16,11 @@ import { AuditService } from '../../audit/application/audit.service';
 const DEFAULTS = {
   announcement: { enabled: false, text: '', linkUrl: null },
   shipping: { freeShippingThresholdVnd: null, flatFeeVnd: 0, zones: [] },
-  checkout: { paymentWindowMinutes: 30, requirePhoneVerification: true },
+  checkout: {
+    paymentWindowMinutes: 30,
+    requirePhoneVerification: false,
+    requireManualConfirmation: true,
+  },
   contact: {
     floatingEnabled: true,
     headline: 'Liên hệ NONA',
@@ -51,10 +55,18 @@ const DEFAULTS = {
   custom: {
     enabled: false,
     requireApproval: false,
-    maxLayers: 6,
-    allowText: false,
+    maxLayers: 12,
+    allowText: true,
     allowImage: false,
-    maxTextLength: 30,
+    maxTextLength: 12,
+    letterHeightCm: 4,
+    stickerColors: [
+      { id: 'blue', name: 'Xanh dương', hex: '#aec9ea' },
+      { id: 'pink', name: 'Hồng', hex: '#ebb5c8' },
+      { id: 'purple', name: 'Tím', hex: '#c5a3e3' },
+      { id: 'yellow', name: 'Vàng', hex: '#f5ec9b' },
+      { id: 'green', name: 'Xanh lá', hex: '#b6d8b5' },
+    ],
     textPriceVnd: 0,
     imagePriceVnd: 0,
     colors: [{ id: 'natural', name: 'Tự nhiên', hex: '#d5bd84', priceVnd: 0 }],
@@ -168,6 +180,7 @@ export class SettingsService {
     return {
       paymentWindowMinutes: parsed.data.paymentWindowMinutes,
       requirePhoneVerification: parsed.data.requirePhoneVerification,
+      requireManualConfirmation: parsed.data.requireManualConfirmation,
     };
   }
 

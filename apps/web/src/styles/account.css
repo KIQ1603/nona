@@ -259,8 +259,11 @@
 .checkout-side {
   display: grid;
   gap: 14px;
+  /* stays in view while the form scrolls, just under the sticky header */
   position: sticky;
-  top: 16px;
+  top: calc(var(--header-h) + 16px);
+  max-height: calc(100dvh - var(--header-h) - 32px);
+  overflow-y: auto;
 }
 .checkout-grid textarea {
   width: 100%;
@@ -898,4 +901,14 @@
 .google-btn + .switch,
 .or-divider + .google-btn {
   margin-top: 0;
+}
+
+.order-note {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border: 1px solid #e3b865;
+  border-radius: 10px;
+  background: #fbf3df;
+  color: #5a4520;
+  line-height: 1.5;
 }

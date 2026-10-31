@@ -1,0 +1,460 @@
+/* "Tự thiết kế sản phẩm", after the Figma wireframe: product types | preview | tabs of motifs / colours. */
+.dz {
+  max-width: 1320px;
+  margin: 0 auto;
+}
+.dz-head {
+  margin-bottom: 28px;
+  text-align: center;
+}
+.dz-head h1 {
+  margin: 0;
+  color: #5b1a1d;
+  font:
+    600 clamp(30px, 3.4vw, 46px) / 1.1 var(--font-hero),
+    var(--font-display);
+}
+.dz-head p {
+  margin: 10px 0 0;
+  color: #6f5a55;
+  font-size: 15px;
+}
+.dz-grid {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr) 390px;
+  gap: clamp(18px, 2.4vw, 36px);
+  align-items: start;
+}
+.dz h2 {
+  margin: 0 0 14px;
+  color: #3a1a17;
+  font: 600 17px var(--font-display);
+}
+
+/* left: the product types */
+.dz-types ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+.dz-types button {
+  width: 100%;
+  padding: 12px 8px;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  border: 1px solid rgba(100, 21, 26, 0.14);
+  border-radius: 16px;
+  color: #3a1a17;
+  font: inherit;
+  background: #fff;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    box-shadow 0.2s;
+}
+.dz-types button:hover:not(:disabled) {
+  border-color: rgba(122, 23, 29, 0.45);
+}
+.dz-types button[aria-pressed='true'] {
+  border-color: #7a171d;
+  background: #f8e6dc;
+  box-shadow: 0 6px 16px rgba(106, 21, 28, 0.12);
+}
+.dz-types button:disabled:not([aria-pressed='true']) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.dz-type-img {
+  width: 84px;
+  height: 84px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #f6e7dd;
+}
+.dz-type-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.dz-types strong {
+  font-size: 14px;
+}
+
+/* centre: preview */
+.dz-stage .design-hint {
+  margin: 10px 0 0;
+  color: #6f5a55;
+  font-size: 13px;
+  text-align: center;
+}
+.dz-thumbs {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.dz-thumbs button {
+  width: 68px;
+  height: 68px;
+  padding: 3px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(100, 21, 26, 0.16);
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+}
+.dz-thumbs button[aria-pressed='true'] {
+  border-color: #7a171d;
+  box-shadow: 0 0 0 2px rgba(122, 23, 29, 0.18);
+}
+.dz-thumbs img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* right: tabs and tiles */
+.dz-panel {
+  padding: 18px;
+  border: 1px solid rgba(100, 21, 26, 0.12);
+  border-radius: 20px;
+  background: #fff;
+}
+.dz-tabs {
+  margin-bottom: 14px;
+  display: flex;
+  gap: 10px;
+}
+.dz-tabs button {
+  padding: 8px 22px;
+  border: 0;
+  border-radius: 999px;
+  color: #5b1a1d;
+  font: 600 14px var(--font-body);
+  background: #f3e6dd;
+  cursor: pointer;
+}
+.dz-tabs button[aria-selected='true'] {
+  color: #fff;
+  background: #7a171d;
+}
+.dz-panel .charm-grid,
+.dz-tiles {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.dz-panel .charm-tile > button.pick,
+.dz-colors button {
+  width: 100%;
+  padding: 8px 4px;
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  border: 1px solid rgba(100, 21, 26, 0.12);
+  border-radius: 12px;
+  color: #3a1a17;
+  font: 500 12px var(--font-body);
+  background: #fbf3ee;
+  cursor: pointer;
+}
+.dz-panel .charm-tile.on > button.pick,
+.dz-colors button[aria-pressed='true'] {
+  border-color: #7a171d;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(122, 23, 29, 0.16);
+}
+.dz-panel .charm-tile .gp-preview,
+.dz-colors .gp-preview {
+  width: 100%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+.dz-colors .gp-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.dz-colors small,
+.dz-panel .charm-tile small {
+  color: #7a5b55;
+  font-size: 11px;
+}
+.dz-more {
+  margin: 14px auto 0;
+  padding: 10px 26px;
+  display: block;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  font: 600 14px var(--font-body);
+  background: #7a171d;
+  cursor: pointer;
+}
+.dz-muted {
+  color: #7a5b55;
+  font-size: 14px;
+}
+.dz-layers {
+  margin-top: 16px;
+}
+.dz-panel .design-price {
+  margin-top: 16px;
+}
+
+/* bottom: note + buttons */
+.dz-bottom {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: stretch;
+}
+.dz-note {
+  padding: 16px 22px;
+  border-radius: 20px;
+  color: #4a2724;
+  background: #f4d9d5;
+}
+.dz-note strong {
+  font-size: 15px;
+}
+.dz-note p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.dz-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.dz-cart,
+.dz-buy,
+.dz-new {
+  min-height: 54px;
+  padding: 0 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #7a171d;
+  border-radius: 999px;
+  font: 700 15px var(--font-body);
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    transform 0.2s;
+}
+.dz-cart {
+  color: #7a171d;
+  background: #fff;
+}
+.dz-buy {
+  color: #fff;
+  background: linear-gradient(180deg, #8a2229, #6a151c);
+}
+.dz-new {
+  border-color: transparent;
+  color: #7a5b55;
+  background: transparent;
+  text-decoration: underline;
+}
+.dz-cart:hover:not(:disabled),
+.dz-buy:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+.dz-cart:disabled,
+.dz-buy:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.dz .featured-gap {
+  height: 8px;
+}
+@media (max-width: 1100px) {
+  .dz-grid {
+    grid-template-columns: 150px minmax(0, 1fr);
+  }
+  .dz-panel {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 720px) {
+  .dz-grid {
+    grid-template-columns: 1fr;
+  }
+  .dz-types ul {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .dz-type-img {
+    width: 56px;
+    height: 56px;
+  }
+  .dz-bottom {
+    grid-template-columns: 1fr;
+  }
+  .dz-actions > * {
+    flex: 1 1 100%;
+  }
+}
+
+.dz-panel .charm-tile .gp-preview,
+.dz-colors .gp-preview {
+  min-height: 0;
+  overflow: hidden;
+}
+.dz-panel .charm-tile .gp-preview > *,
+.dz-colors .gp-preview > * {
+  max-width: 100%;
+  max-height: 100%;
+}
+.dz-panel .charm-tile .gp-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.dz-types small {
+  color: #8a6f69;
+  font-size: 11px;
+}
+.custom-wrap .nl-featured {
+  margin-top: 64px;
+}
+
+/* colours of stickers and letters */
+.dz-swatches {
+  margin: 8px 0 12px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.dz-swatch {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(60, 30, 30, 0.25);
+  cursor: pointer;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+}
+.dz-swatch:hover {
+  transform: scale(1.08);
+}
+.dz-swatch[aria-pressed='true'] {
+  box-shadow: 0 0 0 3px #7a171d;
+}
+.dz-palette h3 {
+  margin: 14px 0 4px;
+  color: #3a1a17;
+  font: 600 14px var(--font-body);
+}
+.dz-palette h3:first-child {
+  margin-top: 0;
+}
+.dz-text {
+  display: grid;
+  gap: 10px;
+}
+.dz-text .dz-more {
+  margin: 4px 0 0;
+}
+.dz-text .dz-more:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.motif-tint {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* sticker rows: one row per sticker, one tile per palette colour */
+.dz-stickers {
+  display: grid;
+  gap: 14px;
+}
+.dz-sticker header {
+  margin-bottom: 6px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.dz-sticker header strong {
+  color: #3a1a17;
+  font-size: 14px;
+}
+.dz-sticker header small {
+  color: #7a5b55;
+  font-size: 12px;
+}
+.dz-swatch-tiles {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+.dz-swatch-tiles li {
+  position: relative;
+}
+.dz-swatch-tiles li > button:first-child {
+  width: 100%;
+  padding: 6px 2px 4px;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  border: 1px solid rgba(100, 21, 26, 0.12);
+  border-radius: 10px;
+  background: #fbf3ee;
+  cursor: pointer;
+}
+.dz-swatch-tiles li.on > button:first-child {
+  border-color: #7a171d;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(122, 23, 29, 0.16);
+}
+.dz-swatch-tiles .gp-preview {
+  width: 100%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.dz-swatch-tiles small {
+  color: #7a5b55;
+  font-size: 10.5px;
+  line-height: 1.1;
+  text-align: center;
+}
+.motif-tint {
+  width: 86%;
+  height: 86%;
+  display: block;
+}
+.layer-times {
+  margin-left: 4px;
+  color: #7a171d;
+  font-weight: 700;
+}

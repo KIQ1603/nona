@@ -104,7 +104,14 @@ const phone = z
   .string()
   .trim()
   .transform((v) => v.replace(/[\s.-]/g, ''))
-  .pipe(z.string().regex(/^(\+84|0)[0-9]{9,10}$/, 'Số điện thoại không hợp lệ'));
+  .pipe(
+    z
+      .string()
+      .regex(
+        /^(?:\+84|84|0)[35789][0-9]{8}$/,
+        'Số điện thoại không hợp lệ: cần số di động Việt Nam (đầu số 03, 05, 07, 08, 09)',
+      ),
+  );
 
 export const addressInputSchema = z.object({
   fullName: z.string().trim().min(1).max(100),

@@ -29,6 +29,19 @@ describe('renderEmail', () => {
     expect(m.text).toContain('Miễn phí');
     expect(m.text).toContain('https://nona.vn/don-hang/AB12CD34EF56');
   });
+  it('says the shop will call when the order still has to be confirmed by hand, and mails the confirmation later', () => {
+    const waiting = renderEmail('order.placed', { ...order, awaitingConfirmation: true }, ctx)!;
+    expect(waiting.subject).toContain('Đã nhận đơn hàng');
+    expect(waiting.text).toContain('chờ cửa hàng xác nhận');
+    expect(waiting.html).toContain('Đơn hàng đang chờ xác nhận');
+    expect(renderEmail('order.placed', order, ctx)!.subject).toContain('Xác nhận đơn hàng');
+    const done = renderEmail(
+      'order.status_changed',
+      { orderCode: 'AB12CD34EF56', customerName: 'A', status: 'CONFIRMED' },
+      ctx,
+    )!;
+    expect(done.subject).toContain('đã được xác nhận');
+  });
   it('escapes every dynamic value in HTML', () => {
     const html = renderEmail('order.placed', order, ctx)!.html;
     expect(html).not.toContain('<script>');

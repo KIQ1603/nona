@@ -1891,3 +1891,25 @@ form.admin-card > button[type='submit'] {
     top: 10px;
   }
 }
+
+.color-rows {
+  margin: 12px 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+.color-rows li {
+  display: grid;
+  grid-template-columns: 44px minmax(120px, 240px) 90px auto;
+  gap: 12px;
+  align-items: center;
+}
+.color-rows input[type='color'] {
+  width: 44px;
+  height: 36px;
+  padding: 2px;
+  border: 1px solid var(--admin-line, #d8d8d8);
+  border-radius: 8px;
+  background: #fff;
+}

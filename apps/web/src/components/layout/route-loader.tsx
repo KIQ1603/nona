@@ -4,13 +4,12 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 /**
- * Brand loader: an "N" inside a spinning ring, centred on the page. Shown while the first page loads
- * (server-rendered, so it appears before any script) and while the shopper navigates to another page.
- * Quick navigations never flash it: it only appears if the next page takes longer than a moment.
+ * Brand loader shown only when an internal navigation takes longer than a moment. The first page is
+ * already server-rendered, so covering it would delay useful content and can trap no-script users.
  */
 export function RouteLoader() {
   const pathname = usePathname();
-  const [visible, setVisible] = useState(true); // true on the server: covers the very first paint
+  const [visible, setVisible] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const safety = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const current = useRef(pathname);
@@ -61,7 +60,7 @@ export function RouteLoader() {
           <circle className="track" cx="50" cy="50" r="44" />
           <circle className="arc" cx="50" cy="50" r="44" />
         </svg>
-        <span>N</span>
+        <img src="/brand/logo-sac-cham.png" alt="" />
       </div>
     </div>
   );

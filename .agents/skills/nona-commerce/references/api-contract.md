@@ -33,7 +33,7 @@ Public catalog may use cursor pagination. Admin tables may use page pagination w
 ```text
 GET    /v1/products
 GET    /v1/products/:slug
-GET    /v1/categories
+GET    /v1/categories            -> items {slug, name, description, parentSlug|null, productCount}; types first (by sort order), then their groups
 POST   /v1/auth/register
 POST   /v1/auth/login
 POST   /v1/auth/logout
@@ -65,7 +65,7 @@ POST   /v1/admin/designs/versions/:versionId/review     (designs:review; APPROVE
 GET    /v1/storefront/settings
 POST   /v1/auth/forgot-password              (always 202)
 POST   /v1/auth/reset-password
-POST   /v1/orders/:publicCode/cancel         (owner only, CONFIRMED only)
+POST   /v1/orders/:publicCode/cancel         (owner only, AWAITING_CONFIRMATION or CONFIRMED)
 GET    /v1/me/orders
 GET    /v1/admin/orders/:id
 PATCH  /v1/admin/orders/:id/status           (orders:write; body: to, version, reason?, shipment?)
@@ -146,6 +146,8 @@ POST   /v1/admin/inventory/adjustments
 
 ## Articles
 
+> The storefront pages (`/bai-viet`), the admin screens and the sitemap entries were removed (the shop does not publish articles). The API below and the `articles` table stay dormant and unused by the web app; remove them in a later change if they are not coming back.
+
 - Public: `GET /v1/articles?page&pageSize(<=24)` (published only, newest first) and `GET /v1/articles/:slug` (404 for anything not published).
 - Admin (`articles:write`: ADMIN, CATALOG): `GET|POST /v1/admin/articles`, `GET|PATCH|DELETE /v1/admin/articles/:id` (PATCH needs the optimistic `version`; `status` DRAFT|PUBLISHED|ARCHIVED), `POST|DELETE /v1/admin/articles/:id/cover` (multipart `file`), `POST /v1/admin/articles/images` (inline image, returns its URL).
 - Publishing requires a title, non-empty body and a cover (API rule and DB check). The first publication fixes `publishedAt`; republishing keeps it. A published article cannot be deleted or lose its cover. All writes are audited.
@@ -191,7 +193,7 @@ Use `409 Conflict` for stale state, duplicate operations, invalid transitions, a
 - `POST /v1/me/phone/verify {code}` -> `{ phone, verified: true }`; wrong code 400 `TOKEN_INVALID` with `details.attemptsLeft`; the code is locked after 5 wrong tries; each code works once and only the newest is valid.
 - `DELETE /v1/me/phone` removes the number. Audit actions: `account.phone_otp_sent`, `account.phone_verified`, `account.phone_removed`.
 
-- Checkout phone proof (signed in or guest with a cart): `GET /v1/checkout/phone?phone=` -> `{phone, verified}`; `POST /v1/checkout/phone/otp {phone}` (same limits as account OTP plus 15 sends/hour per IP; 409 `CART_EMPTY` without a cart); `POST /v1/checkout/phone/verify {code}` -> `{phone, verified:true}`. A code is bound to its purpose (account vs checkout) and owner. `POST /v1/orders` -> 409 `PHONE_NOT_VERIFIED` when required and not proven; `settings.checkout` gains `requirePhoneVerification`.
+- Checkout phone proof (signed in or guest with a cart): `GET /v1/checkout/phone?phone=` -> `{phone, verified}`; `POST /v1/checkout/phone/otp {phone}` (same limits as account OTP plus 15 sends/hour per IP; 409 `CART_EMPTY` without a cart); `POST /v1/checkout/phone/verify {code}` -> `{phone, verified:true}`. A code is bound to its purpose (account vs checkout) and owner. `POST /v1/orders` -> 409 `PHONE_NOT_VERIFIED` when required and not proven; `settings.checkout` gains `requirePhoneVerification` and `requireManualConfirmation` (COD orders start in AWAITING_CONFIRMATION).
 - **Firebase Phone Auth** (when `FIREBASE_PROJECT_ID`, `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_APP_ID` are set): Firebase texts the code and checks it in the browser; our server never queues an SMS. `GET /v1/auth/providers` -> `{google, phone: {provider: 'sms'|'firebase', firebase: {apiKey, authDomain, projectId, appId}|null}}` (public web config only). The browser sends the resulting ID token: `POST /v1/me/phone/firebase {idToken}` -> `{phone, verified}`, `POST /v1/checkout/phone/firebase {idToken}` -> `{phone, verified:true}`, `POST /v1/auth/register/verify-firebase {token, idToken}` -> 201 + session, and `POST /v1/auth/reset-password/phone {token, idToken, newPassword, confirmPassword}` (`code` xor `idToken`). The number is read from the token, never from the request. A challenge from `register/start` or `forgot-password` for a phone then answers `provider: 'firebase'` and no `devCode`; its token's number must equal the challenge's number. `POST /v1/me/phone/otp` -> 409 while Firebase is on. Invalid, forged, expired (> 5 min since sign-in), foreign-project or non-phone tokens -> 400 `TOKEN_INVALID`.
 
 ## Sign in with Google
@@ -206,3 +208,16 @@ Use `409 Conflict` for stale state, duplicate operations, invalid transitions, a
 - `POST /v1/auth/register/resend {token}` (60 s apart) -> a new challenge token; the previous code stops working. `POST /v1/auth/register/verify {token, code}` -> 201 and the session cookie: only now the CUSTOMER is created, with `email_verified_at` or `phone_verified_at` set (a phone account has `email = null`). 5 wrong tries lock the challenge; 5 codes per identifier and 15 per IP per hour. The old one-step `POST /v1/auth/register` was removed.
 - `POST /v1/auth/login` accepts an email, a mobile number (any common format) or the bare username shortcut.
 - `POST /v1/auth/forgot-password {identifier}` (`email` still accepted): an email gets the reset link; a mobile number gets an SMS code and the answer is `{ok, token, destination, ...}` whether or not the number has an account. `POST /v1/auth/reset-password/phone {token, code, newPassword, confirmPassword}` -> 204 and every session is signed out. `POST /v1/me/phone/otp` and the checkout phone proof also require a mobile number.
+
+## Product types, featured products, designer catalogue
+
+- `GET /v1/products?category=<slug>`: for a **type** the filter also matches every group inside it; for a group only its own products. `featured=true` keeps only products the admin flagged `isFeatured`. A type's `productCount` includes its groups.
+- Admin: `POST/PATCH /v1/admin/categories` accept `parentId` (a type id, or null/absent = this category is a type). 400 `VALIDATION_ERROR` on `parentId` when it is the category itself, unknown, not a type, or when the category already has groups. `DELETE` returns 409 while the category has products or groups. `GET /v1/admin/categories` lists types first; each item carries `parentId`.
+- Admin products carry `isFeatured` (create, update, detail).
+- `GET /v1/custom/catalog`: each product has `type: {slug, name}` (its type, whether it sits in the type or in a group) and products are ordered by the type's sort order; `options.note` (<= 500 chars, admin-editable) is the text of the designer's "Lưu ý" box.
+
+## Custom designs: colours and letters (migration 0026)
+
+- Layer inputs: `MOTIF {motifId, colorId?, x, y, rotation}` and `TEXT {text, fontId, colorId?, x, y, rotation}`; `scale` is ignored and stored as 1. `text` is exactly one letter (400 `VALIDATION_ERROR` otherwise); `colorId` must be a colour of `options.stickerColors` (400 `DESIGN_INVALID` "màu ... không hợp lệ" on create/update/submit). Layer DTOs carry `colorId` (null = first colour).
+- `options` (also in `GET /v1/custom/catalog` and the admin settings `custom` value): `stickerColors [{id, name, hex}]`, `letterHeightCm`, `maxTextLength` (letters per entry), `allowText`, `maxLayers` (<= 12) and each motif's `colorable`.
+- Order snapshot layers: `{kind, summary, charmCode, charmName, colorName}`.

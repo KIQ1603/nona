@@ -152,7 +152,7 @@ export function OrderSlide({
         </div>
       </div>
       <div className="lp-copyright">
-        © {new Date().getFullYear()} NONA · LÀM BẰNG TAY, GỬI BẰNG TÂM
+        © {new Date().getFullYear()} SẮC CHẰM · LÀM BẰNG TAY, GỬI BẰNG TÂM
       </div>
     </>
   );

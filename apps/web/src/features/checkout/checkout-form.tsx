@@ -3,6 +3,7 @@
 import {
   addressListSchema,
   formatVnd,
+  normalizeVnMobile,
   orderSchema,
   quoteSchema,
   type AddressDto,
@@ -282,10 +283,22 @@ export function CheckoutForm({ lineIds }: { lineIds?: string[] }) {
                       inputMode="tel"
                       autoComplete="tel"
                       required
+                      maxLength={16}
                       value={address.phone}
                       onChange={(e) => set('phone', e.target.value)}
                       placeholder="0901234567"
+                      aria-invalid={
+                        address.phone.trim() !== '' && !normalizeVnMobile(address.phone)
+                      }
                     />
+                    {address.phone.trim() !== '' && !normalizeVnMobile(address.phone) ? (
+                      <small className="form-error">
+                        Số điện thoại không hợp lệ: cần số di động Việt Nam (đầu số 03, 05, 07, 08,
+                        09).
+                      </small>
+                    ) : (
+                      <small>Số di động Việt Nam, để cửa hàng liên hệ giao hàng.</small>
+                    )}
                   </label>
                 </div>
                 <label className="field">
@@ -364,20 +377,6 @@ export function CheckoutForm({ lineIds }: { lineIds?: string[] }) {
                   <strong>Thanh toán khi nhận hàng (COD)</strong>
                   <br />
                   Bạn trả tiền mặt cho nhân viên giao hàng.
-                </span>
-              </label>
-              <label className={`choice${method === 'VNPAY' ? ' on' : ''}`}>
-                <input
-                  type="radio"
-                  name="method"
-                  checked={method === 'VNPAY'}
-                  onChange={() => setMethod('VNPAY')}
-                />
-                <span>
-                  <strong>Thanh toán trực tuyến qua VNPay</strong>
-                  <br />
-                  Thẻ ATM nội địa, thẻ quốc tế hoặc QR. Hàng được giữ cho bạn trong thời gian thanh
-                  toán.
                 </span>
               </label>
             </fieldset>
@@ -470,7 +469,10 @@ export function CheckoutForm({ lineIds }: { lineIds?: string[] }) {
             className="btn btn-primary btn-block"
             type="submit"
             disabled={
-              submitting || !quote.canCheckout || (quote.phoneVerificationRequired && !phoneOk)
+              submitting ||
+              !quote.canCheckout ||
+              (quote.phoneVerificationRequired && !phoneOk) ||
+              (!useSaved && !normalizeVnMobile(address.phone))
             }
           >
             {submitting
@@ -485,7 +487,7 @@ export function CheckoutForm({ lineIds }: { lineIds?: string[] }) {
             </small>
           )}
           <small className="fine-print">
-            Bằng việc đặt hàng, bạn đồng ý để NONA liên hệ giao hàng theo thông tin trên.
+            Bằng việc đặt hàng, bạn đồng ý để Sắc Chằm liên hệ giao hàng theo thông tin trên.
           </small>
         </div>
       </form>

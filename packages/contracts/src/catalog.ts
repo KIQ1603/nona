@@ -57,11 +57,14 @@ export const productListQuerySchema = z.object({
         .max(MAX_PAGE_SIZE),
     )
     .optional(),
+  /** A category slug. A product TYPE (a category without a parent) also matches every group inside it. */
   category: z
     .string()
     .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/)
     .max(80)
     .optional(),
+  /** Only the products the admin marked as featured. */
+  featured: z.enum(['true']).optional(),
   q: z.string().trim().min(1).max(80).optional(),
   minPriceVnd: z.coerce.number().int().min(0).max(100_000_000).optional(),
   maxPriceVnd: z.coerce.number().int().min(0).max(100_000_000).optional(),
@@ -90,6 +93,9 @@ export const categorySchema = z.object({
   slug: z.string(),
   name: z.string(),
   description: z.string().nullable(),
+  /** Set for a group inside a product type; null for a product type itself (Nón lá, Móc khóa, Kẹp tóc). */
+  parentSlug: z.string().nullable().default(null),
+  /** Published, buyable products in this category (a type also counts the groups inside it). */
   productCount: z.number().int(),
 });
 export type CategoryDto = z.infer<typeof categorySchema>;

@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import { useCallback, useRef } from 'react';
 import { useDialog } from '@/lib/use-dialog';
-import { NAV_LINKS } from '@/lib/site';
+import { buildNav, type NavType } from '@/lib/site';
 import { useOverlays } from './overlay-store';
 
-export function MobileNav() {
+export function MobileNav({ types }: { types: NavType[] }) {
   const { open, hide } = useOverlays();
   const ref = useRef<HTMLDivElement>(null);
   const close = useCallback(() => hide('nav'), [hide]);
@@ -24,11 +24,29 @@ export function MobileNav() {
       <button className="mobile-nav-close" type="button" aria-label="Đóng menu" onClick={close}>
         ×
       </button>
-      {NAV_LINKS.map((link) => (
-        <Link key={link.href} href={link.href} onClick={close}>
-          {link.label}
-        </Link>
-      ))}
+      {buildNav(types).map((link) =>
+        link.children ? (
+          <div key={link.label} className="mobile-nav-group">
+            <span>{link.label}</span>
+            {link.children.map((c) => (
+              <div key={c.href}>
+                <Link href={c.href} onClick={close}>
+                  {c.label}
+                </Link>
+                {c.sub?.map((g) => (
+                  <Link key={g.href} href={g.href} className="sub" onClick={close}>
+                    {g.label}
+                  </Link>
+                ))}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <Link key={link.href} href={link.href} onClick={close}>
+            {link.label}
+          </Link>
+        ),
+      )}
     </div>
   );
 }

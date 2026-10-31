@@ -110,8 +110,10 @@ export function DesignPreview({
                   w: charmUnits(options.imageSizeCm, hatWidthCm, area, hatHeightCm),
                   h: charmUnits(options.imageSizeCm, hatWidthCm, area, hatHeightCm),
                 };
-          const w = l.kind === 'TEXT' ? Math.max(40, l.text.length * 15 * l.scale) : box.w;
-          const h = l.kind === 'TEXT' ? 34 * l.scale : box.h;
+          // a letter is as tall as the shop configured (cap height); its box is a little wider than tall glyph
+          const letter = charmUnits(options.letterHeightCm, hatWidthCm, area, hatHeightCm);
+          const w = l.kind === 'TEXT' ? Math.max(24, letter * 0.9) : box.w;
+          const h = l.kind === 'TEXT' ? Math.max(24, letter * 1.15) : box.h;
           return (
             <button
               key={i}

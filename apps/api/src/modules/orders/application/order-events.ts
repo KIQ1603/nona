@@ -22,5 +22,7 @@ export function orderPlacedPayload(order: OrderRow, items: Record<string, unknow
     totalVnd: Number(order.total_vnd),
     address: order.shipping_address,
     placedAt: order.placed_at.toISOString(),
+    /** The shop still has to confirm this order by hand (shown in the email). */
+    awaitingConfirmation: order.status === 'AWAITING_CONFIRMATION',
   };
 }

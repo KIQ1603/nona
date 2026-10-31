@@ -4,7 +4,7 @@ import { apiGet } from '@/lib/api-client';
 const EMPTY: LandingContent = {
   hero: {
     eyebrow: '',
-    titleTop: 'NONA',
+    titleTop: 'Sắc Chằm',
     titleAccent: 'Nón Việt',
     text: '',
     primaryCta: 'Khám phá bộ sưu tập',

@@ -65,8 +65,14 @@ export class DesignsService {
     const options = await this.settings.getCustomOptions();
     const { rows } = await this.db.query(
       `SELECT p.id, p.slug, p.name, p.hat_width_cm, p.hat_height_cm,
+              t.slug AS type_slug, t.name AS type_name,
               (SELECT object_key FROM product_images WHERE product_id = p.id ORDER BY (variant_id IS NOT NULL), position, created_at LIMIT 1) AS image_key
-       FROM products p WHERE p.status = 'PUBLISHED' AND p.is_customizable ORDER BY p.sort_weight DESC, p.name`,
+       FROM products p
+       JOIN categories c ON c.id = p.category_id
+       LEFT JOIN categories pc ON pc.id = c.parent_id
+       JOIN categories t ON t.id = COALESCE(pc.id, c.id)
+       WHERE p.status = 'PUBLISHED' AND p.is_customizable
+       ORDER BY t.sort_order, t.name, p.sort_weight DESC, p.name`,
     );
     const products: CustomCatalog['products'] = [];
     for (const p of rows) {
@@ -85,6 +91,7 @@ export class DesignsService {
       products.push({
         slug: p.slug,
         name: p.name,
+        type: { slug: p.type_slug, name: p.type_name },
         imageUrl: p.image_key ? `${this.mediaBase}/${p.image_key}` : null,
         hatWidthCm: p.hat_width_cm === null ? null : Number(p.hat_width_cm),
         hatHeightCm: p.hat_height_cm === null ? null : Number(p.hat_height_cm),
@@ -183,6 +190,11 @@ export class DesignsService {
     return row;
   }
 
+  /** Name of the palette colour a layer uses (absent or unknown = the first colour, as drawn). */
+  private colorName(options: CustomOptions, id?: string): string | null {
+    return (options.stickerColors.find((c) => c.id === id) ?? options.stickerColors[0])?.name ?? null;
+  }
+
   private layerDto(l: LayerRow) {
     return {
       id: l.id,
@@ -191,6 +203,7 @@ export class DesignsService {
       text: l.props.text ?? null,
       fontId: l.props.fontId ?? null,
       motifId: l.props.motifId ?? null,
+      colorId: l.props.colorId ?? null,
       assetId: l.asset_id,
       x: Number(l.x),
       y: Number(l.y),
@@ -635,18 +648,31 @@ export class DesignsService {
         if (l.kind === 'MOTIF') {
           const m = options.motifs.find((x) => x.id === l.motifId);
           const name = m?.name ?? l.motifId;
+          const color = m?.tint === 'none' ? null : this.colorName(options, l.colorId);
           return {
             kind: l.kind,
-            summary: `Charm ${name} (mã ${l.motifId})`,
+            summary: `Sticker ${name} (mã ${l.motifId})${color ? `, màu ${color}` : ''}`,
             charmCode: l.motifId,
             charmName: name,
+            colorName: color,
+          };
+        }
+        if (l.kind === 'TEXT') {
+          const color = this.colorName(options, l.colorId);
+          return {
+            kind: l.kind,
+            summary: `Chữ “${l.text}” (${l.fontId})${color ? `, màu ${color}` : ''}`,
+            charmCode: null,
+            charmName: null,
+            colorName: color,
           };
         }
         return {
           kind: l.kind,
-          summary: l.kind === 'TEXT' ? `Chữ “${l.text}” (${l.fontId})` : 'Ảnh khách tải lên',
+          summary: 'Ảnh khách tải lên',
           charmCode: null,
           charmName: null,
+          colorName: null,
         };
       }),
       priceAdditionVnd: Number(v.price_addition_vnd),

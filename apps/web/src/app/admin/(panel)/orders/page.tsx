@@ -14,6 +14,25 @@ const group = (code: string) => code.replace(/(.{4})(?=.)/g, '$1-');
 type Search = Promise<Record<string, string | string[] | undefined>>;
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) || undefined;
 
+/** Filter order: the happy path from "Chờ xác nhận" to completion, then the side branches. DRAFT is never shown. */
+const FILTER_ORDER = [
+  'AWAITING_CONFIRMATION',
+  'PENDING_PAYMENT',
+  'PAID',
+  'CONFIRMED',
+  'PROCESSING',
+  'READY_TO_SHIP',
+  'SHIPPING',
+  'COMPLETED',
+  'CANCELLATION_REQUESTED',
+  'CANCELLED',
+  'PAYMENT_FAILED',
+  'EXPIRED',
+  'REFUND_PENDING',
+  'PARTIALLY_REFUNDED',
+  'REFUNDED',
+] as const satisfies readonly (typeof ORDER_STATUSES)[number][];
+
 export default async function AdminOrdersPage({ searchParams }: { searchParams: Search }) {
   const sp = await searchParams;
   const q = one(sp.q);
@@ -45,7 +64,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
           ariaLabel="Trạng thái"
           options={[
             { value: '', label: 'Mọi trạng thái' },
-            ...ORDER_STATUSES.map((s) => ({ value: s, label: ORDER_STATUS_LABELS[s] })),
+            ...FILTER_ORDER.map((s) => ({ value: s, label: ORDER_STATUS_LABELS[s] })),
           ]}
         />
         <button className="btn btn-dark" type="submit">

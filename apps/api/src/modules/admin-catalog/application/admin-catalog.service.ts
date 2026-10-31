@@ -23,6 +23,26 @@ const UNIQUE_MESSAGES = {
   categories_slug_key: 'Slug danh mục đã tồn tại.',
 };
 
+/** A parent must be a product TYPE (a category without a parent): two levels only. */
+async function assertParent(
+  c: { query: (t: string, v?: unknown[]) => Promise<{ rows: Record<string, unknown>[] }> },
+  parentId: string,
+  selfId?: string,
+) {
+  const issue = (message: string) =>
+    AppError.validation({ issues: [{ path: 'parentId', message }] });
+  if (parentId === selfId) throw issue('Danh mục không thể thuộc chính nó.');
+  const parent = (await c.query('SELECT id, parent_id FROM categories WHERE id = $1', [parentId]))
+    .rows[0];
+  if (!parent) throw issue('Không tìm thấy loại sản phẩm đã chọn.');
+  if (parent.parent_id) throw issue('Chỉ được chọn một loại sản phẩm (không chọn nhóm con) làm cấp trên.');
+  if (selfId) {
+    const kids = await c.query('SELECT 1 FROM categories WHERE parent_id = $1 LIMIT 1', [selfId]);
+    if (kids.rows.length)
+      throw issue('Loại sản phẩm đang có nhóm con nên không thể thuộc loại khác.');
+  }
+}
+
 export interface Actor {
   userId: string;
   requestId?: string;
@@ -36,6 +56,7 @@ const camel: Record<string, string> = {
   hat_height_cm: 'hatHeightCm',
   sort_weight: 'sortWeight',
   is_customizable: 'isCustomizable',
+  is_featured: 'isFeatured',
   seo_title: 'seoTitle',
   seo_description: 'seoDescription',
 };
@@ -95,7 +116,13 @@ export class AdminCatalogService {
   }
 
   async createCategory(
-    input: { name: string; slug?: string; description?: string | null; sortOrder: number },
+    input: {
+      name: string;
+      slug?: string;
+      description?: string | null;
+      parentId?: string | null;
+      sortOrder: number;
+    },
     actor: Actor,
   ) {
     const slug = input.slug ?? slugify(input.name);
@@ -105,9 +132,10 @@ export class AdminCatalogService {
       });
     try {
       return await this.repo.db.transaction(async (c) => {
+        if (input.parentId) await assertParent(c, input.parentId);
         const { rows } = await c.query(
-          'INSERT INTO categories (slug, name, description, sort_order) VALUES ($1,$2,$3,$4) RETURNING id',
-          [slug, input.name, input.description ?? null, input.sortOrder],
+          'INSERT INTO categories (slug, name, description, parent_id, sort_order) VALUES ($1,$2,$3,$4,$5) RETURNING id',
+          [slug, input.name, input.description ?? null, input.parentId ?? null, input.sortOrder],
         );
         await this.audit.record(
           {
@@ -133,6 +161,7 @@ export class AdminCatalogService {
         const before = (await c.query('SELECT * FROM categories WHERE id = $1 FOR UPDATE', [id]))
           .rows[0];
         if (!before) throw AppError.notFound('Không tìm thấy danh mục.');
+        if (typeof input.parentId === 'string') await assertParent(c, input.parentId, id);
         const { sets, values } = buildSet(CATEGORY_COLUMNS, input, 2);
         if (!sets.length) return;
         await c.query(
@@ -175,7 +204,7 @@ export class AdminCatalogService {
       });
     } catch (e) {
       if ((e as { code?: string }).code === '23503')
-        throw new AppError('CONFLICT', 409, 'Không thể xóa danh mục đang có sản phẩm.');
+        throw new AppError('CONFLICT', 409, 'Không thể xóa danh mục đang có sản phẩm hoặc nhóm con.');
       throw e;
     }
   }
@@ -194,8 +223,8 @@ export class AdminCatalogService {
     try {
       return await this.repo.db.transaction(async (c) => {
         const { rows } = await c.query(
-          `INSERT INTO products (category_id, slug, name, summary, description, badge, color_code, style_code, sort_weight, seo_title, seo_description, is_customizable, hat_width_cm, hat_height_cm, status)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'DRAFT') RETURNING id`,
+          `INSERT INTO products (category_id, slug, name, summary, description, badge, color_code, style_code, sort_weight, seo_title, seo_description, is_customizable, hat_width_cm, hat_height_cm, is_featured, status)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,'DRAFT') RETURNING id`,
           [
             input.categoryId,
             slug,
@@ -211,6 +240,7 @@ export class AdminCatalogService {
             input.isCustomizable,
             input.hatWidthCm ?? null,
             input.hatHeightCm ?? null,
+            input.isFeatured ?? false,
           ],
         );
         await this.audit.record(

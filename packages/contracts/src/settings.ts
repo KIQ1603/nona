@@ -28,7 +28,12 @@ export const checkoutSettingSchema = z.object({
   /** How long stock is held while the customer pays online. */
   paymentWindowMinutes: z.number().int().min(5).max(1440),
   /** The phone number that receives an order must be confirmed with an OTP before the order can be placed. */
-  requirePhoneVerification: z.boolean().default(true),
+  requirePhoneVerification: z.boolean().default(false),
+  /**
+   * A cash-on-delivery order is created as "Chờ xác nhận" and staff confirm it by hand (they check the phone number is
+   * real) before it is prepared. Online-paid orders are not affected: a verified payment confirms them.
+   */
+  requireManualConfirmation: z.boolean().default(true),
 });
 
 export const shippingSettingSchema = z.object({

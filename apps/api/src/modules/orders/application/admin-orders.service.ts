@@ -208,7 +208,7 @@ export class AdminOrdersService {
           actorId: actor.userId,
           reason: change.reason ?? null,
         });
-        if (change.to === 'SHIPPING' || change.to === 'COMPLETED') {
+        if (change.to === 'CONFIRMED' || change.to === 'SHIPPING' || change.to === 'COMPLETED') {
           await enqueueOutbox(c, 'order.status_changed', {
             orderCode: order.public_code,
             email: order.customer_email,

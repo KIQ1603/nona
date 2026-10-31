@@ -1,25 +1,16 @@
 import type { Metadata } from 'next';
-import { getProduct, getProducts } from '@/features/catalog/api/catalog.api';
-import { getLanding } from '@/features/landing/landing.api';
+import { getProducts } from '@/features/catalog/api/catalog.api';
 import { LandingExperience } from '@/features/landing/landing-experience';
-import { getStorefrontSettings } from '@/features/settings/settings.api';
 
 export const metadata: Metadata = { alternates: { canonical: '/' } };
 
+/** Giới thiệu: the public landing page, inside the same shell (header, footer) as the rest of the shop. */
 export default async function HomePage() {
-  const [content, settings, featured] = await Promise.all([
-    getLanding(),
-    getStorefrontSettings(),
-    getProducts({ sort: 'featured', pageSize: 4 }),
-  ]);
-  const detailed = await Promise.all(featured.items.slice(0, 4).map((p) => getProduct(p.slug)));
-  const products = detailed.filter((p): p is NonNullable<typeof p> => p !== null);
-  return (
-    <LandingExperience
-      content={content}
-      products={products}
-      contact={settings.contact}
-      freeShippingThresholdVnd={settings.freeShippingThresholdVnd}
-    />
-  );
+  const featured = await getProducts({ featured: 'true', sort: 'featured', pageSize: 3 });
+  // nothing flagged as featured yet: fall back to the first products rather than an empty block
+  const products =
+    featured.items.length > 0
+      ? featured.items
+      : (await getProducts({ sort: 'featured', pageSize: 3 })).items;
+  return <LandingExperience products={products.slice(0, 3)} />;
 }

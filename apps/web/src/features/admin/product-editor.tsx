@@ -22,6 +22,7 @@ const toForm = (p: AdminProductDetail): ProductFormState => ({
   styleCode: p.styleCode ?? '',
   sortWeight: p.sortWeight,
   isCustomizable: p.isCustomizable,
+  isFeatured: p.isFeatured,
   hatWidthCm: p.hatWidthCm === null ? '' : String(p.hatWidthCm),
   hatHeightCm: p.hatHeightCm === null ? '' : String(p.hatHeightCm),
   seoTitle: p.seoTitle ?? '',

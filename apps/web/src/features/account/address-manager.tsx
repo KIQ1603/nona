@@ -1,6 +1,11 @@
 'use client';
 
-import { addressListSchema, MAX_ADDRESSES, type AddressDto } from '@nona/contracts';
+import {
+  addressListSchema,
+  MAX_ADDRESSES,
+  type AddressDto,
+  normalizeVnMobile,
+} from '@nona/contracts';
 import { useState, type FormEvent } from 'react';
 import { useToast } from '@/components/ui/toast';
 import { useAction } from '@/features/account/use-action';
@@ -146,10 +151,17 @@ export function AddressManager({ initial }: { initial: AddressDto[] }) {
                 autoComplete="tel"
                 required
                 inputMode="tel"
+                maxLength={16}
                 value={form.phone}
                 onChange={(e) => set('phone', e.target.value)}
                 placeholder="0901234567"
+                aria-invalid={form.phone.trim() !== '' && !normalizeVnMobile(form.phone)}
               />
+              {form.phone.trim() !== '' && !normalizeVnMobile(form.phone) && (
+                <small className="form-error">
+                  Số điện thoại không hợp lệ: cần số di động Việt Nam (đầu số 03, 05, 07, 08, 09).
+                </small>
+              )}
             </label>
           </div>
           <label className="field">

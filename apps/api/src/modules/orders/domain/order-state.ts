@@ -23,4 +23,4 @@ export function assertTransition(from: OrderStatus, to: OrderStatus): void {
 export const customerCanCancel = (status: OrderStatus) => CUSTOMER_CANCELLABLE.includes(status);
 /** Statuses that hold sold stock which must be returned to the ledger if the order is cancelled. */
 export const releasesStockOnCancel = (status: OrderStatus) =>
-  ['CONFIRMED', 'PROCESSING', 'READY_TO_SHIP'].includes(status);
+  ['AWAITING_CONFIRMATION', 'CONFIRMED', 'PROCESSING', 'READY_TO_SHIP'].includes(status);

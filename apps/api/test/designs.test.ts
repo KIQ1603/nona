@@ -11,6 +11,7 @@ import type pg from 'pg';
 import sharp from 'sharp';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { DesignsService } from '../src/modules/designs/application/designs.service';
 import { OBJECT_STORAGE } from '../src/modules/media/domain';
 import type { MemoryStorage } from '../src/modules/media/infrastructure/memory-storage';
 import { createCategory, createProduct } from './factories';
@@ -43,7 +44,7 @@ beforeEach(async () => {
 });
 
 const pos = { x: 0.5, y: 0.5, scale: 1, rotation: 0 };
-const text = (t = 'Lan') => ({ kind: 'TEXT', text: t, fontId: 'serif', ...pos });
+const text = (t = 'L') => ({ kind: 'TEXT', text: t, fontId: 'serif', ...pos });
 const motif = { kind: 'MOTIF', motifId: 'star', ...pos };
 const base = async (o: { price?: number; stock?: number; customizable?: boolean } = {}) => {
   const r = await createProduct(pool, {
@@ -98,6 +99,36 @@ describe('catalogue', () => {
     expect(res.body.options.colors).toBeUndefined();
     expect(res.body.products[0].variants[0]).toHaveProperty('image');
   });
+  it('names the product type of each designable product, so the designer can offer Nón lá / Móc khóa / Kẹp tóc', async () => {
+    const nonLa = (
+      await pool.query<{ id: string }>(
+        "INSERT INTO categories (slug, name, sort_order) VALUES ('non-la', 'Nón lá', 0) RETURNING id",
+      )
+    ).rows[0]!.id;
+    const group = (
+      await pool.query<{ id: string }>(
+        "INSERT INTO categories (slug, name, parent_id, sort_order) VALUES ('non-hoa', 'Nón họa', $1, 5) RETURNING id",
+        [nonLa],
+      )
+    ).rows[0]!.id;
+    const mocKhoa = (
+      await pool.query<{ id: string }>(
+        "INSERT INTO categories (slug, name, sort_order) VALUES ('moc-khoa', 'Móc khóa', 1) RETURNING id",
+      )
+    ).rows[0]!.id;
+    for (const categoryId of [group, mocKhoa])
+      await createProduct(pool, {
+        categoryId,
+        customizable: true,
+        variants: [{ price: 100_000, stock: 5 }],
+      });
+    const res = await request(app.getHttpServer()).get('/v1/custom/catalog');
+    expect(res.body.products.map((p: { type: unknown }) => p.type)).toEqual([
+      { slug: 'non-la', name: 'Nón lá' }, // a group reports its type, in the shop's order
+      { slug: 'moc-khoa', name: 'Móc khóa' },
+    ]);
+    expect(res.body.options.note).toBe('');
+  });
   it('refuses to create designs while the feature is switched off', async () => {
     const v = await base();
     await setCustom({ enabled: false });
@@ -121,7 +152,7 @@ describe('creating and editing drafts', () => {
       hasPreview: false,
     });
     expect(d.latest.layers.map((l) => [l.position, l.kind, l.text ?? l.motifId])).toEqual([
-      [0, 'TEXT', 'Lan'],
+      [0, 'TEXT', 'L'],
       [1, 'MOTIF', 'star'],
     ]);
     expect(d.product).toMatchObject({ basePriceVnd: 400_000 });
@@ -138,9 +169,8 @@ describe('creating and editing drafts', () => {
     const post = (over: object) => b.post('/v1/custom-designs').send(body(v.variantId, over));
     expect((await post({ layers: [{ ...motif, motifId: 'nope' }] })).status).toBe(400);
     expect((await post({ layers: Array.from({ length: 7 }, () => motif) })).status).toBe(400);
-    expect((await post({ layers: [text('x'.repeat(31))] })).status).toBe(400);
+    expect((await post({ layers: [text('Lan')] })).status).toBe(400); // one letter per layer
     expect((await post({ layers: [{ ...text(), x: 1.5 }] })).status).toBe(400);
-    expect((await post({ layers: [{ ...text(), scale: 50 }] })).status).toBe(400);
     expect((await post({ title: '' })).status).toBe(400);
     expect(
       (await post({ layers: [{ kind: 'IMAGE', assetId: randomUUID(), ...pos }] })).status,
@@ -180,11 +210,11 @@ describe('creating and editing drafts', () => {
     const d = dto(await b.post('/v1/custom-designs').send(body(v.variantId)));
     const upd = await b
       .patch(`/v1/custom-designs/${d.id}`)
-      .send({ title: 'Mới', layers: [text('Hoa')] });
+      .send({ title: 'Mới', layers: [text('H')] });
     expect(upd.status).toBe(200);
     expect(dto(upd)).toMatchObject({ title: 'Mới' });
     expect(dto(upd).latest).toMatchObject({
-      layers: [expect.objectContaining({ text: 'Hoa' })],
+      layers: [expect.objectContaining({ text: 'H' })],
     });
     await b.post(`/v1/custom-designs/${d.id}/submit`).send({ contactEmail: 'a@example.com' });
     const frozen = await b.patch(`/v1/custom-designs/${d.id}`).send({ title: 'Sửa sau khi nộp' });
@@ -262,7 +292,10 @@ describe('submitting: frozen price and server-rendered preview', () => {
       await b.post('/v1/custom-designs').send(
         body(v.variantId, {
           layers: [
-            text('<script>alert(1)</script> &"\''),
+            text('<'),
+            text('&'),
+            text('"'),
+            text("'"),
             { kind: 'IMAGE', assetId: asset.id, ...pos },
           ],
         }),
@@ -272,10 +305,47 @@ describe('submitting: frozen price and server-rendered preview', () => {
       .post(`/v1/custom-designs/${d.id}/submit`)
       .send({ contactEmail: 'a@example.com' });
     expect(res.status, JSON.stringify(res.body)).toBe(200);
-    expect(dto(res).latest.priceAdditionVnd).toBe(30_000 + 60_000);
+    expect(dto(res).latest.priceAdditionVnd).toBe(4 * 30_000 + 60_000); // four letters, each priced, plus the picture
     expect(
       isPng((await b.get(`/v1/custom-designs/versions/${dto(res).latest.id}/preview`)).body),
     ).toBe(true);
+  });
+
+  it('colours stickers and letters from the shop palette, refuses a colour that is not in it, and names the colour on the order snapshot', async () => {
+    const v = await base();
+    const b = browser(app);
+    const ghost = await b
+      .post('/v1/custom-designs')
+      .send(body(v.variantId, { layers: [{ ...motif, colorId: 'ghost' }] }));
+    expect(ghost.status).toBe(400);
+    expect(JSON.stringify(ghost.body)).toContain('màu họa tiết không hợp lệ');
+    const ok = dto(
+      await b.post('/v1/custom-designs').send(
+        body(v.variantId, {
+          layers: [
+            { ...motif, colorId: 'pink' },
+            { ...text('A'), colorId: 'green' },
+            text('B'), // no colour chosen: the first palette colour
+          ],
+        }),
+      ),
+    );
+    expect(ok.latest.layers.map((l) => l.colorId)).toEqual(['pink', 'green', null]);
+    const sub = await b.post(`/v1/custom-designs/${ok.id}/submit`).send({});
+    expect(sub.status, JSON.stringify(sub.body)).toBe(200);
+    const { snapshot } = await (async () => {
+      const client = await pool.connect();
+      try {
+        return { snapshot: await app.get(DesignsService).snapshot(client, dto(sub).latest.id) };
+      } finally {
+        client.release();
+      }
+    })();
+    expect(snapshot.layers.map((l) => [l.kind, l.colorName])).toEqual([
+      ['MOTIF', 'Hồng'],
+      ['TEXT', 'Xanh lá'],
+      ['TEXT', 'Xanh dương'],
+    ]);
   });
 
   it('with approval switched off (the shop default) a submitted design is approved at once, uploaded pictures included', async () => {
@@ -445,7 +515,7 @@ describe('versions', () => {
     expect(v2.latest).toMatchObject({
       versionNo: 2,
       status: 'DRAFT',
-      layers: [expect.objectContaining({ text: 'Lan' }), expect.anything()],
+      layers: [expect.objectContaining({ text: 'L' }), expect.anything()],
     });
     expect(v2.versions.map((x) => [x.versionNo, x.status])).toEqual([
       [1, 'ARCHIVED'],
@@ -460,7 +530,7 @@ describe('versions', () => {
     const { b, designId, versionId } = await approvedDesign();
     const v2 = dto(await b.post(`/v1/custom-designs/${designId}/versions`).send({}));
     expect(v2.latest.versionNo).toBe(2);
-    await b.patch(`/v1/custom-designs/${designId}`).send({ layers: [text('Khác')] });
+    await b.patch(`/v1/custom-designs/${designId}`).send({ layers: [text('K')] });
     const v1 = (
       await pool.query(
         'SELECT status, price_addition_vnd FROM custom_design_versions WHERE id = $1',
@@ -475,7 +545,7 @@ describe('versions', () => {
           'TEXT',
         ])
       ).rows[0].props.text,
-    ).toBe('Lan');
+    ).toBe('L');
   });
 });
 
@@ -801,7 +871,7 @@ describe('cart, checkout and the order snapshot', () => {
       hatColor: null,
       priceAdditionVnd: 50_000,
       layers: [
-        { kind: 'TEXT', summary: expect.stringContaining('Lan') },
+        { kind: 'TEXT', summary: expect.stringContaining('“L”') },
         {
           kind: 'MOTIF',
           summary: expect.stringContaining('Ngôi sao'),
@@ -1109,7 +1179,7 @@ describe('charm size is fixed by the hat, not chosen', () => {
     expect(d.latest.layers.map((l) => [l.kind, l.scale])).toEqual([
       ['MOTIF', 1],
       ['IMAGE', 1],
-      ['TEXT', 2],
+      ['TEXT', 1], // letters, like charms, have a fixed size
     ]);
     const free = dto(
       await b

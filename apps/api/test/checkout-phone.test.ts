@@ -165,3 +165,36 @@ describe('phone verification before ordering', () => {
     expect((await g.post('/v1/checkout/phone/otp').send({ phone: PHONE })).status).toBe(409);
   });
 });
+
+describe('phone number at checkout (verification switched off)', () => {
+  const place = async (phone: string) => {
+    await pool.query(
+      `UPDATE site_settings SET value = '{"paymentWindowMinutes": 30, "requirePhoneVerification": false}' WHERE key = 'checkout'`,
+    );
+    const variantId = await stocked();
+    const g = guest(app);
+    await g.post('/v1/cart/items').send({ variantId, quantity: 1 });
+    const quote = quoteSchema.parse((await g.post('/v1/checkout/quote').send({})).body);
+    return g
+      .post('/v1/orders')
+      .set('Idempotency-Key', randomUUID())
+      .send({
+        shippingAddress: { ...address, phone },
+        contactEmail: 'a@example.com',
+        paymentMethod: 'COD',
+        expectedTotalVnd: quote.totalVnd,
+      });
+  };
+
+  it('needs only a valid Vietnamese mobile number, no code', async () => {
+    expect((await place('0912 345 678')).status).toBe(201);
+    expect((await place('+84 912 345 678')).status).toBe(201);
+  });
+
+  it('refuses a missing number or one that is not a Vietnamese mobile number', async () => {
+    for (const bad of ['', '12345', '0212345678', '0112345678', '091234567', 'abcdefghij']) {
+      const res = await place(bad);
+      expect(res.status, bad).toBe(400);
+    }
+  });
+});

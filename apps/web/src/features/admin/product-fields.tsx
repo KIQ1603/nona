@@ -14,6 +14,7 @@ export interface ProductFormState {
   styleCode: string;
   sortWeight: number;
   isCustomizable: boolean;
+  isFeatured: boolean;
   hatWidthCm: string;
   hatHeightCm: string;
   seoTitle: string;
@@ -31,6 +32,7 @@ export const emptyProductForm = (categoryId = ''): ProductFormState => ({
   styleCode: '',
   sortWeight: 0,
   isCustomizable: true,
+  isFeatured: false,
   hatWidthCm: '60',
   hatHeightCm: '45',
   seoTitle: '',
@@ -49,11 +51,24 @@ export const toPayload = (f: ProductFormState, includeSlug: boolean) => ({
   styleCode: f.styleCode || null,
   sortWeight: f.sortWeight,
   isCustomizable: f.isCustomizable,
+  isFeatured: f.isFeatured,
   hatWidthCm: f.hatWidthCm.trim() ? Number(f.hatWidthCm) : null,
   hatHeightCm: f.hatHeightCm.trim() ? Number(f.hatHeightCm) : null,
   seoTitle: f.seoTitle.trim() || null,
   seoDescription: f.seoDescription.trim() || null,
 });
+
+/** Dropdown options: every product type followed by its groups, "Nón lá › Nón họa". */
+export function categoryOptions(categories: AdminCategory[]) {
+  const name = new Map(categories.map((c) => [c.id, c.name]));
+  const types = categories.filter((c) => !c.parentId);
+  return types.flatMap((t) => [
+    { value: t.id, label: t.name },
+    ...categories
+      .filter((c) => c.parentId === t.id)
+      .map((c) => ({ value: c.id, label: `${name.get(t.id)} › ${c.name}` })),
+  ]);
+}
 
 export function ProductFields({
   value,
@@ -91,10 +106,12 @@ export function ProductFields({
             onChange={(v) => set('categoryId', v)}
             options={[
               ...(value.categoryId ? [] : [{ value: '', label: 'Chọn danh mục…' }]),
-              ...categories.map((c) => ({ value: c.id, label: c.name })),
+              ...categoryOptions(categories),
             ]}
           />
-          <small>Nhóm sản phẩm trên thanh danh mục</small>
+          <small>
+            Loại sản phẩm và nhóm: “Nón lá › Nón họa” nghĩa là nhóm Nón họa của loại Nón lá
+          </small>
         </div>
       </div>
       <div className="form-grid" style={{ ...grid(1), marginTop: 16 }}>
@@ -181,6 +198,15 @@ export function ProductFields({
           <small>Số lớn hiển thị trước</small>
         </label>
       </div>
+
+      <label className="row-inline field">
+        <input
+          type="checkbox"
+          checked={value.isFeatured}
+          onChange={(e) => set('isFeatured', e.target.checked)}
+        />{' '}
+        <span>Nổi bật: hiện trong khối “Sản phẩm nổi bật” trên trang loại sản phẩm của nó</span>
+      </label>
 
       <h3 className="form-section">Thiết kế riêng (NONA Custom)</h3>
       <label className="row-inline field">

@@ -11,7 +11,7 @@ export function CustomCta() {
         <i />
       </div>
       <div>
-        <p className="eyebrow">NONA Custom</p>
+        <p className="eyebrow">Sắc Chằm Custom</p>
         <h2 id="custom-title">
           Chiếc nón kể
           <br />
@@ -27,7 +27,7 @@ export function CustomCta() {
       </div>
       <div className="custom-visual" aria-hidden="true">
         <div className="custom-hat">
-          <b>nona</b>
+          <b>Sắc Chằm</b>
         </div>
         <span>
           Độc bản

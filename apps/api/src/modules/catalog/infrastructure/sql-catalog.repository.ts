@@ -104,19 +104,24 @@ export class SqlCatalogRepository implements CatalogRepository {
       slug: string;
       name: string;
       description: string | null;
+      parent_slug: string | null;
       product_count: number;
     }>(`
-      SELECT c.slug, c.name, c.description,
+      SELECT c.slug, c.name, c.description, pc.slug AS parent_slug,
              COUNT(DISTINCT p.id) FILTER (WHERE EXISTS (
                SELECT 1 FROM product_variants v WHERE v.product_id = p.id AND v.is_active))::int AS product_count
       FROM categories c
-      LEFT JOIN products p ON p.category_id = c.id AND p.status = 'PUBLISHED'
-      GROUP BY c.id
-      ORDER BY c.sort_order, c.name`);
+      LEFT JOIN categories pc ON pc.id = c.parent_id
+      -- a product type also counts the products of the groups inside it
+      LEFT JOIN categories member ON member.id = c.id OR member.parent_id = c.id
+      LEFT JOIN products p ON p.category_id = member.id AND p.status = 'PUBLISHED'
+      GROUP BY c.id, pc.slug
+      ORDER BY (c.parent_id IS NOT NULL), c.sort_order, c.name`);
     return rows.map((r) => ({
       slug: r.slug,
       name: r.name,
       description: r.description,
+      parentSlug: r.parent_slug,
       productCount: r.product_count,
     }));
   }
@@ -130,7 +135,12 @@ export class SqlCatalogRepository implements CatalogRepository {
     };
 
     if (query.slugs?.length) where.push(`p.slug = ANY(${param(query.slugs)}::text[])`);
-    if (query.category) where.push(`c.slug = ${param(query.category)}`);
+    if (query.category) {
+      // a product type matches its own products and those of every group inside it
+      const slug = param(query.category);
+      where.push(`(c.slug = ${slug} OR pc.slug = ${slug})`);
+    }
+    if (query.featured) where.push('p.is_featured');
     if (query.colors?.length) where.push(`p.color_code = ANY(${param(query.colors)}::text[])`);
     if (query.styles?.length) where.push(`p.style_code = ANY(${param(query.styles)}::text[])`);
     if (query.minPriceVnd !== undefined) where.push(`a.max_price >= ${param(query.minPriceVnd)}`);
@@ -153,6 +163,7 @@ export class SqlCatalogRepository implements CatalogRepository {
               COUNT(*) OVER() AS total_count
        FROM products p
        JOIN categories c ON c.id = p.category_id
+       LEFT JOIN categories pc ON pc.id = c.parent_id
        JOIN product_agg a ON a.product_id = p.id
        LEFT JOIN LATERAL (
          SELECT object_key, alt, width, height FROM product_images
@@ -186,6 +197,7 @@ export class SqlCatalogRepository implements CatalogRepository {
       `WITH ${VARIANT_STOCK_CTE}
        SELECT COUNT(*) AS n FROM products p
        JOIN categories c ON c.id = p.category_id
+       LEFT JOIN categories pc ON pc.id = c.parent_id
        JOIN product_agg a ON a.product_id = p.id
        WHERE ${where.join(' AND ')}`,
       values,

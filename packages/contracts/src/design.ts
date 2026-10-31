@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { bubbleGlyph } from './bubble-letters';
 import { hatMarkup } from './hat-art';
 
 // ---------------------------------------------------------------------------------------------
@@ -26,6 +27,11 @@ export type AssetStatus = (typeof ASSET_STATUSES)[number];
 
 /** Fonts are a technical allow-list (they must exist where previews are rendered), not business data. */
 export const DESIGN_FONTS = [
+  {
+    id: 'bubble',
+    label: 'Kẹo bong bóng',
+    family: "'Fredoka One', 'Arial Rounded MT Bold', Arial, sans-serif",
+  },
   { id: 'serif', label: 'Có chân', family: "Georgia, 'Times New Roman', serif" },
   { id: 'sans', label: 'Không chân', family: 'Arial, Helvetica, sans-serif' },
   { id: 'script', label: 'Viết tay', family: "'Brush Script MT', 'Segoe Script', cursive" },
@@ -46,6 +52,25 @@ export const motifImageKey = z
   .string()
   .regex(/^custom\/motifs\/[0-9a-f-]{36}\.webp$/, 'Ảnh biểu tượng không hợp lệ');
 
+/** Stickers and letters come in these pastel colours until the shop edits them: blue, pink, purple, yellow, green. */
+export const DEFAULT_STICKER_COLORS = [
+  { id: 'blue', name: 'Xanh dương', hex: '#aec9ea' },
+  { id: 'pink', name: 'Hồng', hex: '#ebb5c8' },
+  { id: 'purple', name: 'Tím', hex: '#c5a3e3' },
+  { id: 'yellow', name: 'Vàng', hex: '#f5ec9b' },
+  { id: 'green', name: 'Xanh lá', hex: '#b6d8b5' },
+] as const;
+
+/** A word is placed letter by letter: this splits it into user-perceived characters (NFC, so "ằ" stays one). */
+export function splitLetters(text: string): string[] {
+  const s = text.normalize('NFC');
+  const Seg = (Intl as { Segmenter?: new (l?: string, o?: object) => { segment: (t: string) => Iterable<{ segment: string }> } }).Segmenter;
+  const parts = Seg
+    ? Array.from(new Seg('vi', { granularity: 'grapheme' }).segment(s), (x) => x.segment)
+    : Array.from(s);
+  return parts.filter((c) => c.trim() !== '');
+}
+
 /** Admin-managed catalogue of what customers may choose, and what each choice adds to the price. */
 export const customOptionsBaseSchema = z.object({
   enabled: z.boolean(),
@@ -55,7 +80,18 @@ export const customOptionsBaseSchema = z.object({
   /** Whether customers may add their own text / upload their own picture besides the shop's charms. */
   allowText: z.boolean().default(true),
   allowImage: z.boolean().default(true),
+  /** Most letters a customer may type in one go; each letter becomes its own layer. */
   maxTextLength: z.number().int().min(1).max(60),
+  /** Real height (cm) of one letter on the product, like a charm's size: with the product's width it fixes the letter's proportion. */
+  letterHeightCm: z.number().min(0.5).max(30).default(4),
+  /** The colours a sticker or letter can take (pastel palette, edited by the shop). */
+  stickerColors: z
+    .array(z.object({ id: optionId, name: z.string().trim().min(1).max(30), hex }))
+    .min(1)
+    .max(10)
+    .default(DEFAULT_STICKER_COLORS.map((c) => ({ ...c }))),
+  /** Shown to customers in the "Lưu ý" box under the designer (empty = a default note). */
+  note: z.string().trim().max(500).default(''),
   /** Real width (cm) of a customer-uploaded picture on the hat. */
   imageSizeCm: z.number().min(1).max(60).default(10),
   textPriceVnd: money,
@@ -75,6 +111,12 @@ export const customOptionsBaseSchema = z.object({
           /** Real height of the charm in cm; null = same as the width (a square charm). */
           heightCm: z.number().min(1).max(60).nullable().default(null),
           priceVnd: money,
+          /**
+           * How the palette colours the sticker: 'flat' = a one-colour silhouette (icons, vector shapes);
+           * 'shaded' = a photo-like picture keeps its light and shadow and takes the colour (stones, pearls, shells);
+           * 'none' = the picture keeps its own colours.
+           */
+          tint: z.enum(['flat', 'shaded', 'none']).default('flat'),
         })
         .refine(
           (m) => m.path !== null || m.imageKey !== null,
@@ -109,14 +151,28 @@ const charmPosition = {
   rotation: position.rotation,
   scale: fixed(1),
 };
+/** One letter per layer (letters are dragged around one by one), at the real size the shop configured. */
+const letter = z
+  .string()
+  .min(1)
+  .max(12)
+  .transform((v) => v.normalize('NFC'))
+  .refine((v) => splitLetters(v).length === 1, 'Mỗi lớp chữ chỉ chứa một chữ cái');
 export const layerInputSchema = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('TEXT'),
-    text: z.string().trim().min(1).max(60),
+    text: letter,
     fontId: z.enum(fontIds),
-    ...position,
+    /** A colour of `options.stickerColors`; absent = the first one. */
+    colorId: optionId.optional(),
+    ...charmPosition,
   }),
-  z.object({ kind: z.literal('MOTIF'), motifId: optionId, ...charmPosition }),
+  z.object({
+    kind: z.literal('MOTIF'),
+    motifId: optionId,
+    colorId: optionId.optional(),
+    ...charmPosition,
+  }),
   z.object({ kind: z.literal('IMAGE'), assetId: z.string().uuid(), ...charmPosition }),
 ]);
 export type LayerInput = z.infer<typeof layerInputSchema>;
@@ -159,11 +215,13 @@ export function validateDesign(
     const n = i + 1;
     if (l.kind === 'TEXT') {
       if (!options.allowText) issues.push(`Lớp ${n}: dịch vụ không cho thêm chữ`);
-      if (l.text.length > options.maxTextLength)
-        issues.push(`Lớp ${n}: chữ tối đa ${options.maxTextLength} ký tự`);
+      if (l.colorId && !options.stickerColors.some((c) => c.id === l.colorId))
+        issues.push(`Lớp ${n}: màu chữ không hợp lệ`);
     } else if (l.kind === 'MOTIF') {
-      if (!options.motifs.some((m) => m.id === l.motifId))
-        issues.push(`Lớp ${n}: họa tiết không hợp lệ`);
+      const m = options.motifs.find((x) => x.id === l.motifId);
+      if (!m) issues.push(`Lớp ${n}: họa tiết không hợp lệ`);
+      else if (l.colorId && !options.stickerColors.some((c) => c.id === l.colorId))
+        issues.push(`Lớp ${n}: màu họa tiết không hợp lệ`);
     } else if (!options.allowImage) {
       issues.push(`Lớp ${n}: dịch vụ không cho tải ảnh riêng`);
     } else if (assetStatus) {
@@ -302,6 +360,19 @@ export function designArea(hat?: { width: number; height: number } | null): Desi
 const TEXT_FILL = '#242a27';
 const TEXT_STROKE = '#fffaf0';
 
+/** Darkens a #rrggbb colour (for the thin edge that keeps a pastel sticker readable on the straw). */
+const shade = (hexColor: string, by = 0.38) => {
+  const n = parseInt(hexColor.slice(1), 16);
+  const c = (shift: number) => Math.round(((n >> shift) & 255) * (1 - by));
+  return `#${[16, 8, 0].map((s) => c(s).toString(16).padStart(2, '0')).join('')}`;
+};
+/** The palette colour for a layer (absent or unknown = the first one), with its edge colour. */
+const colorOf = (options: Pick<CustomOptions, 'stickerColors'>, id?: string) => {
+  const c = options.stickerColors.find((x) => x.id === id) ?? options.stickerColors[0];
+  const hexValue = c?.hex ?? TEXT_FILL;
+  return { id: c?.id ?? 'ink', hex: hexValue, edge: c ? shade(hexValue) : TEXT_STROKE };
+};
+
 export interface RenderExtras {
   /** Resolves a processed charm picture key to a loadable URL (or inline data). */
   motifHref?: (imageKey: string) => string | null;
@@ -331,30 +402,80 @@ export function renderHatSvg(
     ? ''
     : `<rect width="${area.viewW}" height="${area.viewH}" fill="#f5f0e5"/>`;
   const body: string[] = [];
+  const defs: string[] = [];
+  const tints = new Set<string>();
   for (const l of design.layers) {
     const px = area.left + l.x * area.width;
     const py = area.top + l.y * area.height;
     const t = `translate(${n2(px)} ${n2(py)}) rotate(${n2(l.rotation)}) scale(${n2(l.scale)})`;
     if (l.kind === 'TEXT') {
       const font = DESIGN_FONTS.find((f) => f.id === l.fontId)?.family ?? DESIGN_FONTS[0].family;
+      // the letter's cap height is the configured real height (cm) in proportion to the product's width
+      const size = n2(
+        charmUnits(options.letterHeightCm, extras.hatWidthCm, area, extras.hatHeightCm) / 0.72,
+      );
+      const color = colorOf(options, l.colorId);
+      const glyph = l.fontId === 'bubble' ? bubbleGlyph(l.text) : null;
+      if (glyph) {
+        // Candy letter like the shop's sticker sheet: a puffy body (the glyph fattened by its own stroke), a darker rim,
+        // a light highlight on the top-left edge, a soft shade on the bottom-right and a glossy blob.
+        const s = (Number(size) * 0.72) / 100;
+        const hl = `${uid}-bh-${color.id}`;
+        if (!tints.has(hl)) {
+          tints.add(hl);
+          defs.push(
+            `<linearGradient id="${hl}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>`,
+            `<linearGradient id="${uid}-bd-${color.id}" x1="0" y1="0" x2="1" y2="1"><stop offset=".45" stop-color="${shade(color.hex, 0.45)}" stop-opacity="0"/><stop offset="1" stop-color="${shade(color.hex, 0.45)}" stop-opacity=".55"/></linearGradient>`,
+          );
+        }
+        const d = glyph.d;
+        body.push(
+          `<g transform="${t}"><g transform="scale(${n2(s)}) translate(${n2(-glyph.w / 2)} -50)" stroke-linejoin="round" stroke-linecap="round">` +
+            `<path d="${d}" transform="translate(1.4 2)" fill="#3b1f2a" fill-opacity=".14" stroke="#3b1f2a" stroke-opacity=".14" stroke-width="5.4"/>` +
+            `<path d="${d}" fill="${color.edge}" stroke="${color.edge}" stroke-width="5.4"/>` +
+            `<path d="${d}" fill="${color.hex}" stroke="${color.hex}" stroke-width="3.6"/>` +
+            `<path d="${d}" transform="translate(-.6 -.8)" fill="none" stroke="url(#${hl})" stroke-width="1.9"/>` +
+            `<path d="${d}" transform="translate(.8 1)" fill="none" stroke="url(#${uid}-bd-${color.id})" stroke-width="1.9"/>` +
+            `<ellipse cx="${n2(glyph.w * 0.3)}" cy="14" rx="${n2(Math.max(3.5, glyph.w * 0.1))}" ry="3.2" transform="rotate(-25 ${n2(glyph.w * 0.3)} 14)" fill="#fff" fill-opacity=".7"/>` +
+            `</g></g>`,
+        );
+        continue;
+      }
       body.push(
-        `<text transform="${t}" text-anchor="middle" dominant-baseline="central" font-size="26" font-family="${esc(font)}" fill="${TEXT_FILL}" stroke="${TEXT_STROKE}" stroke-width="2.2" stroke-linejoin="round" paint-order="stroke">${esc(l.text)}</text>`,
+        `<text transform="${t}" text-anchor="middle" dominant-baseline="central" font-size="${size}" font-weight="700" font-family="${esc(font)}" fill="${color.hex}" stroke="${color.edge}" stroke-width="1.6" stroke-linejoin="round" paint-order="stroke">${esc(l.text)}</text>`,
       );
     } else if (l.kind === 'MOTIF') {
       const m = options.motifs.find((x) => x.id === l.motifId);
       const box = charmBox(m ?? { sizeCm: 10 }, extras.hatWidthCm, area, extras.hatHeightCm);
       const bw = n2(box.w);
       const bh = n2(box.h);
+      const color = !m || m.tint === 'none' ? null : colorOf(options, l.colorId);
       if (m?.imageKey) {
         const href = extras.motifHref?.(m.imageKey);
         if (href && SAFE_HREF.test(href)) {
+          // a recolourable picture is a flat silhouette filled with the chosen colour (its alpha is the shape)
+          let filter = '';
+          if (color) {
+            const shaded = m.tint === 'shaded';
+            const fid = `${uid}-${shaded ? 'shade' : 'tint'}-${color.id}`;
+            if (!tints.has(fid)) {
+              tints.add(fid);
+              // flat: fill the silhouette; shaded: multiply the colour into the picture so its light and shadow stay
+              defs.push(
+                shaded
+                  ? `<filter id="${fid}" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feFlood flood-color="${color.hex}" result="c"/><feBlend in="SourceGraphic" in2="c" mode="multiply" result="m"/><feComposite in="m" in2="SourceAlpha" operator="in"/></filter>`
+                  : `<filter id="${fid}" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feFlood flood-color="${color.hex}"/><feComposite in2="SourceAlpha" operator="in"/></filter>`,
+              );
+            }
+            filter = ` filter="url(#${fid})"`;
+          }
           body.push(
-            `<image href="${esc(href)}" x="${-Number(bw) / 2}" y="${-Number(bh) / 2}" width="${bw}" height="${bh}" preserveAspectRatio="xMidYMid meet" transform="${t}"/>`,
+            `<image href="${esc(href)}" x="${-Number(bw) / 2}" y="${-Number(bh) / 2}" width="${bw}" height="${bh}" preserveAspectRatio="xMidYMid meet" transform="${t}"${filter}/>`,
           );
         }
       } else if (m?.path)
         body.push(
-          `<path d="${m.path}" fill="${TEXT_FILL}" stroke="${TEXT_STROKE}" stroke-width="3" stroke-linejoin="round" paint-order="stroke" transform="${t} scale(${Number(bw) / 100} ${Number(bh) / 100}) translate(-50 -50)"/>`,
+          `<path d="${m.path}" fill="${color?.hex ?? TEXT_FILL}" stroke="${color?.edge ?? TEXT_STROKE}" stroke-width="${color ? 2.4 : 3}" stroke-linejoin="round" paint-order="stroke" transform="${t} scale(${Number(bw) / 100} ${Number(bh) / 100}) translate(-50 -50)"/>`,
         );
     } else {
       const href = assetHref(l.assetId);
@@ -369,6 +490,7 @@ export function renderHatSvg(
     const img = `<image href="${esc(hat.href)}" x="${n2(area.left)}" y="${n2(area.top)}" width="${n2(area.width)}" height="${n2(area.height)}" preserveAspectRatio="none"/>`;
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${area.viewW} ${area.viewH}" role="img">
 <defs>
+${defs.join('')}
 <mask id="${uid}-hm" maskUnits="userSpaceOnUse" x="${n2(area.left)}" y="${n2(area.top)}" width="${n2(area.width)}" height="${n2(area.height)}" style="mask-type:alpha">${img}</mask>
 </defs>
 ${backdrop}
@@ -380,6 +502,7 @@ ${img}
 ${backdrop}
 <ellipse cx="200" cy="346" rx="156" ry="26" fill="#22271f" opacity=".13"/>
 ${hatMarkup(uid)}
+<defs>${defs.join('')}</defs>
 <g clip-path="url(#${uid}-shape)">${body.join('')}</g>
 </svg>`;
 }
@@ -393,6 +516,7 @@ export const designLayerSchema = z.object({
   text: z.string().nullable(),
   fontId: z.string().nullable(),
   motifId: z.string().nullable(),
+  colorId: z.string().nullable().default(null),
   assetId: z.string().nullable(),
   x: z.number(),
   y: z.number(),
@@ -474,6 +598,8 @@ export const customCatalogSchema = z.object({
     z.object({
       slug: z.string(),
       name: z.string(),
+      /** The product type it belongs to (Nón lá, Móc khóa, Kẹp tóc…): the designer's "Chọn sản phẩm" list. */
+      type: z.object({ slug: z.string(), name: z.string() }).nullable().default(null),
       imageUrl: z.string().nullable(),
       /** Real width of the hat in cm (null = not entered: a default is assumed). */
       hatWidthCm: z.number().nullable().default(null),
@@ -543,6 +669,8 @@ export const orderCustomizationSchema = z.object({
       /** For a charm: its code and name as they were when the order was placed (so staff never mix them up). */
       charmCode: z.string().nullable().default(null),
       charmName: z.string().nullable().default(null),
+      /** Colour name of a sticker or letter as it was when the order was placed (e.g. "Hồng"). */
+      colorName: z.string().nullable().default(null),
     }),
   ),
   priceAdditionVnd: z.number().int(),

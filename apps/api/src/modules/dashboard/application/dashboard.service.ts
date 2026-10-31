@@ -6,7 +6,7 @@ import { availableQtySql } from '../../inventory/infrastructure/availability';
 /** Orders whose money counts as revenue: paid or being fulfilled, not cancelled/refunded/unpaid. */
 const REVENUE = `('PAID','CONFIRMED','PROCESSING','READY_TO_SHIP','SHIPPING','COMPLETED','PARTIALLY_REFUNDED')`;
 /** Orders that need staff to do something next. */
-const ACTIONABLE = `('PAID','CONFIRMED','PROCESSING','READY_TO_SHIP','CANCELLATION_REQUESTED','REFUND_PENDING')`;
+const ACTIONABLE = `('PAID','AWAITING_CONFIRMATION','CONFIRMED','PROCESSING','READY_TO_SHIP','CANCELLATION_REQUESTED','REFUND_PENDING')`;
 const TZ = 'Asia/Ho_Chi_Minh';
 const LOW_STOCK = 5;
 

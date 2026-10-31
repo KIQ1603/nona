@@ -7,7 +7,7 @@ const FALLBACK: StorefrontSettings = {
   flatShippingFeeVnd: 0,
   contact: {
     floatingEnabled: false,
-    headline: 'Liên hệ NONA',
+    headline: 'Liên hệ Sắc Chằm',
     description: '',
     address: '',
     hours: '',

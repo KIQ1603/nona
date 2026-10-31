@@ -6,6 +6,7 @@ import { CustomizationNote } from './customization-note';
 import { PaymentPanel } from './payment-panel';
 
 const COD_FLOW: OrderStatus[] = [
+  'AWAITING_CONFIRMATION',
   'CONFIRMED',
   'PROCESSING',
   'READY_TO_SHIP',
@@ -58,12 +59,21 @@ export function OrderView({
   const offPath = OFF_PATH[order.status];
   const reached = new Map(order.history.map((h) => [h.status, h.at]));
   const online = order.paymentMethod === 'VNPAY';
-  const flow = online ? ONLINE_FLOW : COD_FLOW;
+  // the manual-confirmation step only appears on orders that went through it
+  const flow = (online ? ONLINE_FLOW : COD_FLOW).filter(
+    (s) => s !== 'AWAITING_CONFIRMATION' || reached.has(s),
+  );
   const currentIndex = flow.indexOf(order.status);
   const awaitingPayment = order.status === 'PENDING_PAYMENT';
 
   return (
     <div className="order-page">
+      {order.status === 'AWAITING_CONFIRMATION' && (
+        <p className="order-note" role="status">
+          Đơn hàng đang chờ cửa hàng xác nhận. Chúng mình sẽ liên hệ qua số điện thoại bạn đã cung
+          cấp để xác nhận trước khi chuẩn bị hàng.
+        </p>
+      )}
       {justPlaced && !awaitingPayment && (
         <div className="order-thanks" role="status">
           <span aria-hidden="true">✦</span>

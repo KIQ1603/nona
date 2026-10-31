@@ -45,6 +45,7 @@ export function SettingsForm({ initial }: { initial: AdminSettings }) {
   const [fee, setFee] = useState(String(initial.shipping.flatFeeVnd));
   const [zones, setZones] = useState<ZoneDraft[]>(initial.shipping.zones.map(toDraft));
   const [windowMin, setWindowMin] = useState(String(initial.checkout.paymentWindowMinutes));
+  const [manualConfirm, setManualConfirm] = useState(initial.checkout.requireManualConfirmation);
   const [requirePhone, setRequirePhone] = useState(initial.checkout.requirePhoneVerification);
   const ann = useAction();
   const ship = useAction();
@@ -88,6 +89,7 @@ export function SettingsForm({ initial }: { initial: AdminSettings }) {
         value: {
           paymentWindowMinutes: Math.floor(Number(windowMin) || 0),
           requirePhoneVerification: requirePhone,
+          requireManualConfirmation: manualConfirm,
         },
       }),
     );
@@ -281,6 +283,20 @@ export function SettingsForm({ initial }: { initial: AdminSettings }) {
             <strong>Bắt buộc xác thực số điện thoại (OTP qua Zalo) trước khi đặt hàng</strong>
             <small style={{ display: 'block' }}>
               Khách phải nhập mã OTP gửi đến số nhận hàng. Tắt mục này nếu chưa cấu hình Zalo ZNS.
+            </small>
+          </span>
+        </label>
+        <label className="row-inline field">
+          <input
+            type="checkbox"
+            checked={manualConfirm}
+            onChange={(e) => setManualConfirm(e.target.checked)}
+          />{' '}
+          <span>
+            <strong>Đơn thanh toán khi nhận hàng cần admin xác nhận tay</strong>
+            <small style={{ display: 'block' }}>
+              Đơn COD vào trạng thái “Chờ xác nhận” (vẫn giữ hàng) cho đến khi admin gọi xác minh và
+              bấm xác nhận. Đơn đã thanh toán online vẫn tự xác nhận.
             </small>
           </span>
         </label>

@@ -92,8 +92,8 @@ export function ForgotForm() {
         <p className="eyebrow">Kiểm tra email</p>
         <h1>Đã gửi hướng dẫn</h1>
         <p className="lead">
-          Nếu <strong>{identifier}</strong> có tài khoản NONA, bạn sẽ nhận được email đặt lại mật
-          khẩu trong vài phút. Liên kết có hiệu lực trong 1 giờ.
+          Nếu <strong>{identifier}</strong> có tài khoản Sắc Chằm, bạn sẽ nhận được email đặt lại
+          mật khẩu trong vài phút. Liên kết có hiệu lực trong 1 giờ.
         </p>
         <p className="switch">
           <Link href="/dang-nhap">Quay lại đăng nhập</Link>
@@ -108,8 +108,8 @@ export function ForgotForm() {
         <p className="eyebrow">Quên mật khẩu</p>
         <h1>Nhập mã và mật khẩu mới</h1>
         <p className="lead">
-          Nếu số <strong>{phone.destination}</strong> có tài khoản NONA, một mã {OTP_LENGTH} số vừa
-          được gửi qua SMS (hiệu lực 5 phút).
+          Nếu số <strong>{phone.destination}</strong> có tài khoản Sắc Chằm, một mã {OTP_LENGTH} số
+          vừa được gửi qua SMS (hiệu lực 5 phút).
         </p>
         {phone.devCode && (
           <p className="phone-dev" role="note">

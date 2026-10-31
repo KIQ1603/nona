@@ -38,7 +38,7 @@ export interface LayerRow {
   version_id: string;
   position: number;
   kind: 'TEXT' | 'MOTIF' | 'IMAGE';
-  props: { text?: string; fontId?: string; motifId?: string };
+  props: { text?: string; fontId?: string; motifId?: string; colorId?: string };
   asset_id: string | null;
   x: string;
   y: string;
@@ -190,9 +190,9 @@ export class DesignsRepository {
     for (const [position, l] of layers.entries()) {
       const props =
         l.kind === 'TEXT'
-          ? { text: l.text, fontId: l.fontId }
+          ? { text: l.text, fontId: l.fontId, ...(l.colorId ? { colorId: l.colorId } : {}) }
           : l.kind === 'MOTIF'
-            ? { motifId: l.motifId }
+            ? { motifId: l.motifId, ...(l.colorId ? { colorId: l.colorId } : {}) }
             : {};
       await c.query(
         `INSERT INTO design_layers (version_id, position, kind, props, asset_id, x, y, scale, rotation) VALUES ($1,$2,$3,$4::jsonb,$5,$6,$7,$8,$9)`,
@@ -225,6 +225,7 @@ export class DesignsRepository {
             kind: 'TEXT',
             text: l.props.text ?? '',
             fontId: l.props.fontId ?? 'serif',
+            ...(l.props.colorId ? { colorId: l.props.colorId } : {}),
             x: Number(l.x),
             y: Number(l.y),
             scale: Number(l.scale),
@@ -234,6 +235,7 @@ export class DesignsRepository {
           ? {
               kind: 'MOTIF',
               motifId: l.props.motifId ?? '',
+              ...(l.props.colorId ? { colorId: l.props.colorId } : {}),
               x: Number(l.x),
               y: Number(l.y),
               scale: Number(l.scale),

@@ -418,7 +418,10 @@ describe('designs on a hat picture with picture charms', () => {
         ),
       );
     const [r, g, bl] = at(px, py);
-    expect(Math.max(r!, g!, bl!)).toBeLessThan(80); // the star is drawn at the dragged spot
+    // the star is drawn at the dragged spot, filled with the first palette colour (pastel blue #aec9ea)
+    expect(Math.abs(r! - 0xae)).toBeLessThan(40);
+    expect(Math.abs(g! - 0xc9)).toBeLessThan(40);
+    expect(Math.abs(bl! - 0xea)).toBeLessThan(40);
     const [hr, hg, hb] = at(
       Math.round(((area.left + 0.5 * area.width) / area.viewW) * info.width),
       Math.round(((area.top + 0.9 * area.height) / area.viewH) * info.height),

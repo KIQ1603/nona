@@ -16,6 +16,7 @@ users 1--* addresses
 users 1--* sessions
 users 1--* carts 1--* cart_items
 categories 1--* products 1--* product_variants
+categories 1--* categories (parent_id: a TYPE has groups; two levels)
 products 1--* product_images
 product_variants 1--* inventory_movements
 product_variants 1--* inventory_reservations
@@ -87,3 +88,9 @@ Each production migration states forward steps, data backfill, compatibility win
 Migration 0019: `phone_otps` can belong to a guest (`guest_token_hash`, exactly one owner), has `purpose` (ACCOUNT|CHECKOUT) and `ip`; `verified_phones` (user or guest owner, phone, verified_at; unique per owner+phone) records numbers proven at checkout.
 
 Migration 0024: `users.email` is nullable (CHECK: email or phone), unique login index on confirmed phones, `orders.customer_email` nullable, and `auth_challenges` (purpose REGISTER|RESET, channel EMAIL|PHONE, identifier, pending full name and password hash, keyed hash of the code, attempts, expiry, ip) holds pending sign-ups and phone resets; nothing in `users` changes until the code is right.
+
+## Product types and featured products (migration 0025)
+
+- `categories.parent_id` (nullable, self reference, `ON DELETE RESTRICT`, `parent_id <> id`). A category without a parent is a **product type** (Nón lá, Móc khóa, Kẹp tóc…); one with a parent is a **group** inside that type. Two levels only, enforced by the admin API (a parent must itself have no parent; a type that has groups cannot get a parent). A product belongs to one category: a group, or a type directly.
+- `products.is_featured boolean NOT NULL DEFAULT false` (partial index): shown in the "Sản phẩm nổi bật" block of its type.
+- Backfill: the types `non-la`, `moc-khoa`, `kep-toc` are inserted and every existing category becomes a group of `non-la` (all earlier products were hats). Rollback: set `parent_id` to null and drop the columns after the release is stable.

@@ -10,6 +10,12 @@ export INTERNAL_API_URL="http://127.0.0.1:${API_PORT}"
 echo "[start] applying database migrations"
 pnpm --filter @nona/database run migrate:deploy
 
+# first admin + a sample customer on a fresh database (only when BOOTSTRAP_* are set; existing accounts are never changed)
+if [ -n "${BOOTSTRAP_ADMIN_EMAIL:-}" ] || [ -n "${BOOTSTRAP_USER_EMAIL:-}" ]; then
+  echo "[start] making sure the first accounts exist"
+  pnpm --filter @nona/database run bootstrap:deploy
+fi
+
 node apps/worker/dist/main.js &
 WORKER_PID=$!
 node apps/api/dist/main.js &

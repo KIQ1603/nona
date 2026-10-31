@@ -97,7 +97,7 @@ export function RegisterForm({
     );
     if (me) {
       setUser(me);
-      toast(`Chào mừng ${me.fullName} đến với NONA`, 'success');
+      toast(`Chào mừng ${me.fullName} đến với Sắc Chằm`, 'success');
       router.replace(next);
       router.refresh();
     }
@@ -175,7 +175,7 @@ export function RegisterForm({
   return (
     <form className="auth-card account-form" onSubmit={submit} aria-labelledby="auth-title">
       <div ref={proof.holder} />
-      <p className="eyebrow">Tham gia NONA</p>
+      <p className="eyebrow">Tham gia Sắc Chằm</p>
       <h1 id="auth-title">Tạo tài khoản</h1>
       <p className="lead">Lưu giỏ hàng, địa chỉ và sản phẩm yêu thích trên mọi thiết bị.</p>
       {notice && (

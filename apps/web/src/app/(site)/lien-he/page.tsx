@@ -4,7 +4,7 @@ import { getStorefrontSettings } from '@/features/settings/settings.api';
 
 export const metadata: Metadata = {
   title: 'Liên hệ',
-  description: 'Liên hệ NONA qua Zalo, Facebook, email và các kênh khác.',
+  description: 'Liên hệ Sắc Chằm qua Zalo, Facebook, email và các kênh khác.',
 };
 
 const shown = (url: string) => url.replace(/^(mailto:|tel:|https:\/\/)/i, '').replace(/\/$/, '');
@@ -15,7 +15,7 @@ export default async function ContactPage() {
   return (
     <div className="contact-page">
       <p className="eyebrow">Liên hệ</p>
-      <h1>{contact.headline || 'Liên hệ NONA'}</h1>
+      <h1>{contact.headline || 'Liên hệ Sắc Chằm'}</h1>
       {contact.description && <p className="lead">{contact.description}</p>}
       {channels.length > 0 ? (
         <ul className="contact-cards">

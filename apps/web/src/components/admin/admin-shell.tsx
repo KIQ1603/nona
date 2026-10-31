@@ -14,7 +14,6 @@ const NAV: { href: string; label: string; permission?: Permission }[] = [
   { href: '/admin/products', label: 'Sản phẩm' },
   { href: '/admin/categories', label: 'Danh mục' },
   { href: '/admin/coupons', label: 'Mã giảm giá' },
-  { href: '/admin/articles', label: 'Bài viết', permission: 'articles:write' },
   { href: '/admin/landing', label: 'Trang chủ (landing)', permission: 'settings:write' },
   { href: '/admin/contact', label: 'Liên hệ và kênh chat', permission: 'settings:write' },
   { href: '/admin/settings', label: 'Khuyến mãi và cấu hình', permission: 'settings:write' },

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { bubbleGlyph } from './bubble-letters';
 import {
   CHARM_SIZE,
   charmBox,
@@ -8,6 +9,7 @@ import {
   layerInputSchema,
   priceDesign,
   renderHatSvg,
+  splitLetters,
   validateDesign,
   type CustomOptions,
   type DesignContent,
@@ -64,7 +66,7 @@ describe('priceDesign', () => {
 describe('validateDesign', () => {
   const ok = design([{ kind: 'TEXT', text: 'Lan', fontId: 'serif', ...pos }]);
   it('accepts a valid design', () => expect(validateDesign(ok, options)).toEqual([]));
-  it('rejects unknown motifs, too many layers and too long text', () => {
+  it('rejects unknown motifs and too many layers', () => {
     expect(
       validateDesign(design([{ kind: 'MOTIF', motifId: 'nope', ...pos }]), options).join(),
     ).toMatch(/họa tiết không hợp lệ/);
@@ -80,12 +82,6 @@ describe('validateDesign', () => {
         options,
       ).join(),
     ).toMatch(/Tối đa 3/);
-    expect(
-      validateDesign(
-        design([{ kind: 'TEXT', text: 'x'.repeat(11), fontId: 'serif', ...pos }]),
-        options,
-      ).join(),
-    ).toMatch(/tối đa 10/);
   });
   it('refuses text and pictures when the shop turns them off, but keeps charms', () => {
     const off = { ...options, allowText: false, allowImage: false };
@@ -217,7 +213,7 @@ describe('charm width and height', () => {
 });
 
 describe('charm size', () => {
-  it('is a fixed share of the hat: client scale is discarded for motifs and images, kept for text', () => {
+  it('is a fixed share of the hat: client scale is discarded for motifs, images and letters', () => {
     expect(
       layerInputSchema.parse({
         kind: 'MOTIF',
@@ -241,7 +237,7 @@ describe('charm size', () => {
         rotation: 0,
         scale: 2,
       }),
-    ).toMatchObject({ scale: 2 });
+    ).toMatchObject({ scale: 1 }); // a letter is as big as the shop configured, never resized
   });
   it('renders every charm at the same size regardless of the stored scale', () => {
     const a = renderHatSvg(design([{ kind: 'MOTIF', motifId: 'star', ...pos }]), options);
@@ -291,7 +287,7 @@ describe('shop artwork', () => {
   const key = 'custom/motifs/11111111-1111-4111-8111-111111111111.webp';
   const withPic = customOptionsSchema.parse({
     ...options,
-    motifs: [{ id: 'pic', name: 'Ảnh', imageKey: key, priceVnd: 0 }],
+    motifs: [{ id: 'pic', name: 'Ảnh', imageKey: key, priceVnd: 0, tint: 'none' }],
   });
   it('requires every charm to have a shape or a picture and only accepts keys from our own upload', () => {
     expect(
@@ -343,5 +339,105 @@ describe('shop artwork', () => {
     expect(svg).not.toContain('javascript:');
     expect(svg).not.toContain('evil.example');
     expect(svg).not.toContain('u-hm'); // fell back to the drawn hat
+  });
+});
+
+describe('stickers and letters in five pastel colours', () => {
+  const svgOf = (layers: DesignContent['layers'], opts: CustomOptions = options, extras = {}) =>
+    renderHatSvg({ layers }, opts, () => null, 'u', extras);
+  const motif = (colorId?: string) => ({
+    kind: 'MOTIF' as const,
+    motifId: 'star',
+    colorId,
+    ...pos,
+  });
+  const letter = (text: string, colorId?: string) => ({
+    kind: 'TEXT' as const,
+    text,
+    fontId: 'serif',
+    colorId,
+    ...pos,
+  });
+
+  it('offers blue, pink, purple, yellow and green by default', () => {
+    expect(options.stickerColors.map((c) => c.id)).toEqual([
+      'blue',
+      'pink',
+      'purple',
+      'yellow',
+      'green',
+    ]);
+    expect(options.letterHeightCm).toBe(4);
+  });
+
+  it('fills a vector sticker and a letter with the chosen colour, and the first colour when none is chosen', () => {
+    const pink = options.stickerColors.find((c) => c.id === 'pink')!.hex;
+    const first = options.stickerColors[0]!.hex;
+    expect(svgOf([motif('pink')])).toContain(`fill="${pink}"`);
+    expect(svgOf([letter('L', 'pink')])).toContain(`fill="${pink}"`);
+    expect(svgOf([motif()])).toContain(`fill="${first}"`);
+  });
+
+  it('colours a picture sticker as a flat silhouette or keeps its light and shadow, or leaves it as it is', () => {
+    const withPicture = (tint: 'flat' | 'shaded' | 'none') =>
+      customOptionsSchema.parse({
+        ...options,
+        motifs: [
+          {
+            id: 'star',
+            name: 'Sao',
+            imageKey: 'custom/motifs/00000000-0000-0000-0000-000000000000.webp',
+            tint,
+            priceVnd: 0,
+          },
+        ],
+      });
+    const extras = { motifHref: () => '/m/star.webp' };
+    const flat = svgOf([motif('green')], withPicture('flat'), extras);
+    expect(flat).toContain('<feFlood flood-color="#b6d8b5"/>');
+    expect(flat).toContain('filter="url(#u-tint-green)"');
+    const shaded = svgOf([motif('green')], withPicture('shaded'), extras);
+    expect(shaded).toContain('mode="multiply"'); // the picture's own light and shadow stay
+    expect(shaded).toContain('filter="url(#u-shade-green)"');
+    expect(svgOf([motif('green')], withPicture('none'), extras)).not.toContain('feFlood');
+  });
+
+  it('draws a letter in the bubble style from its bundled outline, accents dropped, in the chosen colour', () => {
+    const letter = (text: string, colorId?: string) => ({
+      kind: 'TEXT' as const,
+      text,
+      fontId: 'bubble',
+      colorId,
+      ...pos,
+    });
+    const svg = svgOf([letter('A', 'pink')]);
+    expect(svg).toContain('<linearGradient id="u-bh-pink"'); // highlight on the top-left edge
+    expect(svg).toContain('stroke="url(#u-bh-pink)"');
+    expect(svg).not.toContain('<text'); // an outline, so no font is needed on the server
+    expect(bubbleGlyph('ằ')?.char).toBe('A');
+    expect(bubbleGlyph('đ')?.char).toBe('D');
+    expect(bubbleGlyph('?')).toBeNull();
+    expect(svgOf([letter('?')])).toContain('<text'); // no outline for it: falls back to the font
+  });
+
+  it('sizes a letter from its configured real height, in proportion to the product width', () => {
+    const fontSize = (opts: CustomOptions, hatCm: number) =>
+      Number(/font-size="([\d.]+)"/.exec(svgOf([letter('A')], opts, { hatWidthCm: hatCm }))![1]);
+    const tall = customOptionsSchema.parse({ ...options, letterHeightCm: 6 });
+    expect(fontSize(tall, 40)).toBeGreaterThan(fontSize(options, 40)); // taller letters
+    expect(fontSize(options, 20)).toBeGreaterThan(fontSize(options, 40)); // same letter on a smaller product is relatively bigger
+  });
+
+  it('takes one letter per layer (Vietnamese letters stay whole) and rejects a word', () => {
+    expect(layerInputSchema.safeParse(letter('Ằ')).success).toBe(true);
+    expect(layerInputSchema.safeParse(letter('à')).success).toBe(true); // decomposed form is one letter
+    expect(layerInputSchema.safeParse(letter('Lan')).success).toBe(false);
+    expect(splitLetters('Lan Ằ')).toEqual(['L', 'a', 'n', 'Ằ']);
+  });
+
+  it('rejects a colour that is not in the palette', () => {
+    expect(validateDesign(design([motif('ghost')]), options).join()).toContain('màu');
+    expect(validateDesign(design([letter('A', 'ghost')]), options).join()).toContain('màu');
+    expect(validateDesign(design([motif('pink'), letter('A', 'green')]), options)).toEqual([]);
   });
 });

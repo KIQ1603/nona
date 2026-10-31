@@ -101,6 +101,8 @@ describe('priceOrder', () => {
 describe('order state machine', () => {
   it('allows the COD fulfilment path and nothing else', () => {
     for (const [from, to] of [
+      ['AWAITING_CONFIRMATION', 'CONFIRMED'],
+      ['AWAITING_CONFIRMATION', 'CANCELLED'],
       ['CONFIRMED', 'PROCESSING'],
       ['PROCESSING', 'READY_TO_SHIP'],
       ['READY_TO_SHIP', 'SHIPPING'],
@@ -113,6 +115,8 @@ describe('order state machine', () => {
   });
   it('refuses skips, reversals and moves out of terminal states', () => {
     for (const [from, to] of [
+      ['AWAITING_CONFIRMATION', 'PROCESSING'], // must be confirmed first
+      ['AWAITING_CONFIRMATION', 'COMPLETED'],
       ['CONFIRMED', 'SHIPPING'],
       ['CONFIRMED', 'COMPLETED'],
       ['PROCESSING', 'CONFIRMED'],
@@ -126,6 +130,7 @@ describe('order state machine', () => {
   });
   it('lets customers cancel only before preparation starts', () => {
     expect(customerCanCancel('CONFIRMED')).toBe(true);
+    expect(customerCanCancel('AWAITING_CONFIRMATION')).toBe(true);
     for (const s of ['PROCESSING', 'READY_TO_SHIP', 'SHIPPING', 'COMPLETED', 'CANCELLED'] as const)
       expect(customerCanCancel(s)).toBe(false);
   });

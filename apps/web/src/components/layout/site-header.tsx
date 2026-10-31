@@ -5,16 +5,17 @@ import { usePathname } from 'next/navigation';
 import { useCart } from '@/features/cart/cart-store';
 import { useWishlist } from '@/features/wishlist/wishlist-store';
 import { useCustomer } from '@/lib/customer-client';
-import { NAV_LINKS } from '@/lib/site';
+import { buildNav, type NavType } from '@/lib/site';
 import { AccountAvatar } from '../ui/account-avatar';
 import { BagIcon, HeartIcon, SearchIcon } from '../ui/icons';
 import { Brand } from './brand';
+import { ProductMenu } from './product-menu';
 import { useOverlays } from './overlay-store';
 
 const isActive = (pathname: string, href: string) =>
   !href.includes('#') && (pathname === href || pathname.startsWith(`${href}/`));
 
-export function SiteHeader() {
+export function SiteHeader({ types }: { types: NavType[] }) {
   const pathname = usePathname();
   const { show } = useOverlays();
   const { cart } = useCart();
@@ -26,15 +27,19 @@ export function SiteHeader() {
     <header className="site-header">
       <Brand />
       <nav className="desktop-nav" aria-label="Điều hướng chính">
-        {NAV_LINKS.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            aria-current={isActive(pathname, link.href) ? 'page' : undefined}
-          >
-            {link.label}
-          </Link>
-        ))}
+        {buildNav(types).map((link) =>
+          link.children ? (
+            <ProductMenu key={link.label} item={link} current={pathname.startsWith('/shop')} />
+          ) : (
+            <Link
+              key={link.href}
+              href={link.href}
+              aria-current={isActive(pathname, link.href) ? 'page' : undefined}
+            >
+              {link.label}
+            </Link>
+          ),
+        )}
       </nav>
       <div className="header-actions">
         <button
