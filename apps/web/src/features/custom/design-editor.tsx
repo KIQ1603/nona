@@ -15,6 +15,7 @@ import {
   type DesignAssetDto,
   type DesignDto,
   type LayerInput,
+  MAX_LAYERS_HARD,
 } from '@nona/contracts';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -151,11 +152,12 @@ export function DesignEditor({
     [assets],
   );
 
+  // no limit set by the shop: only the safety ceiling applies
+  const maxLayers = options.maxLayers ?? MAX_LAYERS_HARD;
   const setLayer = (i: number, patch: Partial<Layer>) =>
     setLayers((ls) => ls.map((l, j) => (j === i ? ({ ...l, ...patch } as Layer) : l)));
   const addLayer = (l: Layer) => {
-    if (layers.length >= options.maxLayers)
-      return toast(`Tối đa ${options.maxLayers} lớp thiết kế`);
+    if (layers.length >= maxLayers) return toast(`Tối đa ${maxLayers} lớp thiết kế`);
     // stickers start in a free slot and are then dragged by the customer
     const stickers = layers.filter((x) => x.kind !== 'TEXT').length;
     const slot = CHARM_SLOTS[stickers % CHARM_SLOTS.length]!;
@@ -176,12 +178,12 @@ export function DesignEditor({
     if (letters.length === 0)
       return toast('Chỉ gõ được chữ cái A–Z và số 0–9 với kiểu chữ kẹo bong bóng');
     if (letters.length < typed.length) toast('Một số ký tự không có sticker nên đã được bỏ qua');
-    const room = options.maxLayers - layers.length;
+    const room = maxLayers - layers.length;
     if (letters.length > room)
       return toast(
         room > 0
-          ? `Chỉ còn chỗ cho ${room} lớp nữa (tối đa ${options.maxLayers} lớp)`
-          : `Tối đa ${options.maxLayers} lớp thiết kế`,
+          ? `Chỉ còn chỗ cho ${room} lớp nữa (tối đa ${maxLayers} lớp)`
+          : `Tối đa ${maxLayers} lớp thiết kế`,
       );
     const area = designArea(hat);
     const unit = charmUnits(
@@ -684,7 +686,11 @@ export function DesignEditor({
             {layers.length > 0 && (
               <div className="field dz-layers">
                 <span>
-                  Đã chọn ({layers.length}/{options.maxLayers})
+                  Đã chọn (
+                  {options.maxLayers === null
+                    ? layers.length
+                    : `${layers.length}/${options.maxLayers}`}
+                  )
                 </span>
                 <ol className="layer-list">
                   {layerGroups.map((g) => {

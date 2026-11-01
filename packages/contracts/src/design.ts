@@ -64,19 +64,30 @@ export const DEFAULT_STICKER_COLORS = [
 /** A word is placed letter by letter: this splits it into user-perceived characters (NFC, so "ằ" stays one). */
 export function splitLetters(text: string): string[] {
   const s = text.normalize('NFC');
-  const Seg = (Intl as { Segmenter?: new (l?: string, o?: object) => { segment: (t: string) => Iterable<{ segment: string }> } }).Segmenter;
+  const Seg = (
+    Intl as {
+      Segmenter?: new (
+        l?: string,
+        o?: object,
+      ) => { segment: (t: string) => Iterable<{ segment: string }> };
+    }
+  ).Segmenter;
   const parts = Seg
     ? Array.from(new Seg('vi', { granularity: 'grapheme' }).segment(s), (x) => x.segment)
     : Array.from(s);
   return parts.filter((c) => c.trim() !== '');
 }
 
+/** Safety ceiling when the shop sets no limit: keeps one design's payload and rendering bounded. */
+export const MAX_LAYERS_HARD = 200;
+
 /** Admin-managed catalogue of what customers may choose, and what each choice adds to the price. */
 export const customOptionsBaseSchema = z.object({
   enabled: z.boolean(),
   /** If true a design must be APPROVED by staff before it can be ordered. */
   requireApproval: z.boolean(),
-  maxLayers: z.number().int().min(1).max(12),
+  /** Most layers on one product; null = no limit set by the shop (still bounded by `MAX_LAYERS_HARD`). */
+  maxLayers: z.number().int().min(1).max(MAX_LAYERS_HARD).nullable(),
   /** Whether customers may add their own text / upload their own picture besides the shop's charms. */
   allowText: z.boolean().default(true),
   allowImage: z.boolean().default(true),
@@ -181,7 +192,7 @@ export const designContentSchema = z.object({
   title: z.string().trim().min(1).max(80).default('Nón thiết kế riêng'),
   /** The hat the customer designs on: its variant (colour) picture is the canvas. */
   variantId: z.string().uuid(),
-  layers: z.array(layerInputSchema).max(12),
+  layers: z.array(layerInputSchema).max(MAX_LAYERS_HARD),
 });
 export type DesignContent = z.infer<typeof designContentSchema>;
 
@@ -209,7 +220,7 @@ export function validateDesign(
   assetStatus?: (assetId: string) => AssetStatus | null,
 ): string[] {
   const issues: string[] = [];
-  if (content.layers.length > options.maxLayers)
+  if (options.maxLayers !== null && content.layers.length > options.maxLayers)
     issues.push(`Tối đa ${options.maxLayers} lớp thiết kế`);
   content.layers.forEach((l, i) => {
     const n = i + 1;

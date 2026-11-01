@@ -6,6 +6,8 @@ import {
   charmUnits,
   designArea,
   customOptionsSchema,
+  designContentSchema,
+  MAX_LAYERS_HARD,
   layerInputSchema,
   priceDesign,
   renderHatSvg,
@@ -66,6 +68,15 @@ describe('priceDesign', () => {
 describe('validateDesign', () => {
   const ok = design([{ kind: 'TEXT', text: 'Lan', fontId: 'serif', ...pos }]);
   it('accepts a valid design', () => expect(validateDesign(ok, options)).toEqual([]));
+  it('has no layer limit when maxLayers is empty (null), only the safety ceiling', () => {
+    const free = customOptionsSchema.parse({ ...options, maxLayers: null });
+    const many = (n: number) =>
+      design(
+        Array.from({ length: n }, () => ({ kind: 'MOTIF' as const, motifId: 'star', ...pos })),
+      );
+    expect(validateDesign(many(60), free)).toEqual([]);
+    expect(designContentSchema.safeParse(many(MAX_LAYERS_HARD + 1)).success).toBe(false);
+  });
   it('rejects unknown motifs and too many layers', () => {
     expect(
       validateDesign(design([{ kind: 'MOTIF', motifId: 'nope', ...pos }]), options).join(),

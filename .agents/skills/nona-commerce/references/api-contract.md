@@ -219,5 +219,5 @@ Use `409 Conflict` for stale state, duplicate operations, invalid transitions, a
 ## Custom designs: colours and letters (migration 0026)
 
 - Layer inputs: `MOTIF {motifId, colorId?, x, y, rotation}` and `TEXT {text, fontId, colorId?, x, y, rotation}`; `scale` is ignored and stored as 1. `text` is exactly one letter (400 `VALIDATION_ERROR` otherwise); `colorId` must be a colour of `options.stickerColors` (400 `DESIGN_INVALID` "màu ... không hợp lệ" on create/update/submit). Layer DTOs carry `colorId` (null = first colour).
-- `options` (also in `GET /v1/custom/catalog` and the admin settings `custom` value): `stickerColors [{id, name, hex}]`, `letterHeightCm`, `maxTextLength` (letters per entry), `allowText`, `maxLayers` (<= 12) and each motif's `colorable`.
+- `options` (also in `GET /v1/custom/catalog` and the admin settings `custom` value): `stickerColors [{id, name, hex}]`, `letterHeightCm`, `maxTextLength` (letters per entry), `allowText`, `maxLayers` (integer 1–200 or `null` = no limit set by the shop; an empty admin field saves `null`; designs are always capped at 200 layers as a safety ceiling) and each motif's `colorable`.
 - Order snapshot layers: `{kind, summary, charmCode, charmName, colorName}`.

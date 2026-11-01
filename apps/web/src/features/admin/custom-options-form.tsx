@@ -1,6 +1,6 @@
 'use client';
 
-import { formatVnd, type AdminSettings } from '@nona/contracts';
+import { formatVnd, MAX_LAYERS_HARD, type AdminSettings } from '@nona/contracts';
 import { useRef, useState } from 'react';
 import { Dropdown } from '@/components/ui/dropdown';
 import { useToast } from '@/components/ui/toast';
@@ -38,7 +38,7 @@ export function CustomOptionsForm({ initial }: { initial: Custom }) {
 
   const [colors, setColors] = useState(o.stickerColors);
   const [letterCm, setLetterCm] = useState(String(o.letterHeightCm));
-  const [layersMax, setLayersMax] = useState(String(o.maxLayers));
+  const [layersMax, setLayersMax] = useState(o.maxLayers === null ? '' : String(o.maxLayers));
   const [lettersMax, setLettersMax] = useState(String(o.maxTextLength));
   const [allowText, setAllowText] = useState(o.allowText);
   const [savingLook, setSavingLook] = useState(false);
@@ -51,7 +51,11 @@ export function CustomOptionsForm({ initial }: { initial: Custom }) {
           ...o,
           allowText,
           letterHeightCm: Number(letterCm),
-          maxLayers: Math.max(1, Math.min(12, Math.floor(Number(layersMax) || 1))),
+          // empty = no limit
+          maxLayers:
+            layersMax.trim() === ''
+              ? null
+              : Math.max(1, Math.min(MAX_LAYERS_HARD, Math.floor(Number(layersMax) || 1))),
           maxTextLength: Math.max(1, Math.min(60, Math.floor(Number(lettersMax) || 1))),
           stickerColors: colors.map((c) => ({ ...c, name: c.name.trim() })),
         },
@@ -175,11 +179,12 @@ export function CustomOptionsForm({ initial }: { initial: Custom }) {
             <input
               type="number"
               min={1}
-              max={12}
+              max={MAX_LAYERS_HARD}
+              placeholder="Không giới hạn"
               value={layersMax}
               onChange={(e) => setLayersMax(e.target.value)}
             />
-            <small>Sticker và chữ cộng lại, tối đa 12</small>
+            <small>Sticker và chữ cộng lại. Để trống = không giới hạn.</small>
           </label>
         </div>
         <p className="form-note">
