@@ -8,7 +8,7 @@ export default async function CustomOptionsPage() {
     <>
       <div className="page-head">
         <div>
-          <h1>Tùy chọn NONA Custom</h1>
+          <h1>Tùy chọn Tự thiết kế</h1>
           <p>
             Khách xem nón và trang trí bằng các charm của cửa hàng. Mỗi charm có mã, tên, hình, kích
             thước và giá; đơn hàng ghi lại mã và tên charm để không bị nhầm.

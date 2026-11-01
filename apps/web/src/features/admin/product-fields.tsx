@@ -208,7 +208,7 @@ export function ProductFields({
         <span>Nổi bật: hiện trong khối “Sản phẩm nổi bật” trên trang loại sản phẩm của nó</span>
       </label>
 
-      <h3 className="form-section">Thiết kế riêng (NONA Custom)</h3>
+      <h3 className="form-section">Tự thiết kế</h3>
       <label className="row-inline field">
         <input
           type="checkbox"

@@ -10,7 +10,7 @@ const NAV: { href: string; label: string; permission?: Permission }[] = [
   { href: '/admin', label: 'Tổng quan' },
   { href: '/admin/orders', label: 'Đơn hàng', permission: 'orders:read' },
   { href: '/admin/designs', label: 'Thiết kế riêng', permission: 'designs:read' },
-  { href: '/admin/custom-options', label: 'Tùy chọn NONA Custom', permission: 'settings:write' },
+  { href: '/admin/custom-options', label: 'Tùy chọn Tự thiết kế', permission: 'settings:write' },
   { href: '/admin/products', label: 'Sản phẩm' },
   { href: '/admin/categories', label: 'Danh mục' },
   { href: '/admin/coupons', label: 'Mã giảm giá' },
@@ -38,10 +38,14 @@ export function AdminShell({ children }: { children: ReactNode }) {
       </a>
       <aside className="admin-sidebar">
         <Link href="/admin" className="admin-brand">
-          <span className="brand-mark" aria-hidden="true">
-            N
-          </span>{' '}
-          NONA <small>Admin</small>
+          <img
+            className="brand-mark"
+            src="/brand/logo-sac-cham.png"
+            alt=""
+            width="40"
+            height="40"
+          />{' '}
+          Sắc Chằm <small>Admin</small>
         </Link>
         <nav aria-label="Quản trị">
           {NAV.filter((n) => !n.permission || can(n.permission)).map((n) => {

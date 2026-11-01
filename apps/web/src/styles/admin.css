@@ -1913,3 +1913,17 @@ form.admin-card > button[type='submit'] {
   border-radius: 8px;
   background: #fff;
 }
+
+.admin-brand .brand-mark,
+.login-card .brand-mark {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 50%;
+  background: #fff;
+}
+.login-card .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}

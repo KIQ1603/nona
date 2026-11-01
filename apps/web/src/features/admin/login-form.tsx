@@ -63,10 +63,8 @@ export function LoginForm() {
   return (
     <form className="admin-card login-card" onSubmit={submit} aria-labelledby="login-title">
       <div className="brand" style={{ marginBottom: 8 }}>
-        <span className="brand-mark" aria-hidden="true">
-          N
-        </span>{' '}
-        NONA
+        <img className="brand-mark" src="/brand/logo-sac-cham.png" alt="" width="40" height="40" />{' '}
+        Sắc Chằm
       </div>
       <h1 id="login-title">{challenge ? 'Xác thực hai lớp' : 'Đăng nhập quản trị'}</h1>
       {challenge ? (

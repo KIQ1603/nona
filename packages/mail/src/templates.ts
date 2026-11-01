@@ -23,7 +23,7 @@ const STATUS_COPY: Record<string, { subject: string; lead: string }> = {
   },
   COMPLETED: {
     subject: 'đã giao thành công',
-    lead: 'Đơn hàng của bạn đã được giao. Cảm ơn bạn đã chọn NONA!',
+    lead: 'Đơn hàng của bạn đã được giao. Cảm ơn bạn đã chọn Sắc Chằm!',
   },
   CONFIRMED: {
     subject: 'đã được xác nhận',
@@ -45,9 +45,9 @@ function layout(title: string, bodyHtml: string): string {
   return `<!doctype html><html lang="vi"><body style="margin:0;background:#faf9f5;font-family:Arial,Helvetica,sans-serif;color:#21352d">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px">
 <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:16px;padding:28px">
-<tr><td><div style="font:22px Georgia,serif;letter-spacing:.14em;color:#a83b2e">NONA</div>
+<tr><td><div style="font:22px Georgia,serif;letter-spacing:.14em;color:#a83b2e">Sắc Chằm</div>
 <h1 style="font:400 22px Georgia,serif;margin:18px 0 12px">${esc(title)}</h1>${bodyHtml}
-<p style="margin:26px 0 0;color:#6e756f;font-size:12px">NONA — Nón Việt, dấu ấn riêng.</p></td></tr></table></td></tr></table></body></html>`;
+<p style="margin:26px 0 0;color:#6e756f;font-size:12px">Sắc Chằm — Chằm nét xưa, gài duyên nay.</p></td></tr></table></td></tr></table></body></html>`;
 }
 
 interface OrderPlaced {
@@ -87,7 +87,7 @@ export function renderEmail(
     const text = [
       `Xin chào ${payload.fullName},`,
       '',
-      'Chào mừng bạn đến với NONA! Tài khoản của bạn đã được tạo thành công.',
+      'Chào mừng bạn đến với Sắc Chằm! Tài khoản của bạn đã được tạo thành công.',
       ...(payload.code
         ? [
             '',
@@ -99,21 +99,21 @@ export function renderEmail(
       'Nếu bạn không tạo tài khoản này, hãy bỏ qua email này.',
     ].join('\n');
     const html = layout(
-      'Chào mừng bạn đến với NONA',
-      `<p>Xin chào ${esc(payload.fullName)}, tài khoản NONA của bạn đã được tạo thành công.</p>${
+      'Chào mừng bạn đến với Sắc Chằm',
+      `<p>Xin chào ${esc(payload.fullName)}, tài khoản Sắc Chằm của bạn đã được tạo thành công.</p>${
         payload.code
           ? `<p>Để xác nhận email này là của bạn, hãy nhập mã sau trong trang tài khoản (hiệu lực ${esc(payload.ttlMinutes ?? 10)} phút):</p>${codeBox(payload.code)}<p><a href="${esc(url)}" style="display:inline-block;background:#a83b2e;color:#fff;text-decoration:none;padding:12px 22px;border-radius:99px">Mở trang tài khoản</a></p>`
           : ''
       }<p style="color:#6e756f;font-size:13px">Nếu bạn không tạo tài khoản này, hãy bỏ qua email này.</p>`,
     );
-    return { subject: 'NONA — Chào mừng bạn! Đăng ký thành công', text, html };
+    return { subject: 'Sắc Chằm — Chào mừng bạn! Đăng ký thành công', text, html };
   }
 
   if (type === 'auth.email_otp') {
     const text = [
       `Xin chào ${payload.fullName},`,
       '',
-      `Mã xác thực email NONA của bạn: ${payload.code}`,
+      `Mã xác thực email Sắc Chằm của bạn: ${payload.code}`,
       `Mã có hiệu lực ${payload.ttlMinutes ?? 10} phút. Không chia sẻ mã này cho bất kỳ ai.`,
       '',
       'Nếu bạn không yêu cầu mã này, hãy bỏ qua email.',
@@ -122,7 +122,7 @@ export function renderEmail(
       'Mã xác thực email',
       `<p>Xin chào ${esc(payload.fullName)}, đây là mã xác thực email của bạn:</p>${codeBox(payload.code)}<p style="font-size:14px">Mã có hiệu lực ${esc(payload.ttlMinutes ?? 10)} phút. Không chia sẻ mã này cho bất kỳ ai.</p><p style="color:#6e756f;font-size:13px">Nếu bạn không yêu cầu mã này, hãy bỏ qua email.</p>`,
     );
-    return { subject: `NONA — Mã xác thực email: ${payload.code}`, text, html };
+    return { subject: `Sắc Chằm — Mã xác thực email: ${payload.code}`, text, html };
   }
 
   if (type === 'auth.password_changed') {
@@ -131,15 +131,15 @@ export function renderEmail(
     const text = [
       `Xin chào ${payload.fullName},`,
       '',
-      `Mật khẩu tài khoản NONA của bạn vừa được ${how}. Mọi thiết bị khác đã bị đăng xuất.`,
+      `Mật khẩu tài khoản Sắc Chằm của bạn vừa được ${how}. Mọi thiết bị khác đã bị đăng xuất.`,
       '',
-      `Nếu không phải bạn, hãy đặt lại mật khẩu ngay: ${url} và liên hệ NONA.`,
+      `Nếu không phải bạn, hãy đặt lại mật khẩu ngay: ${url} và liên hệ Sắc Chằm.`,
     ].join('\n');
     const html = layout(
       'Mật khẩu đã được thay đổi',
-      `<p>Xin chào ${esc(payload.fullName)}, mật khẩu tài khoản NONA của bạn vừa được ${how}. Mọi thiết bị khác đã bị đăng xuất.</p><p><strong>Không phải bạn?</strong> Hãy đặt lại mật khẩu ngay và liên hệ NONA.</p><p><a href="${esc(url)}" style="display:inline-block;background:#a83b2e;color:#fff;text-decoration:none;padding:12px 22px;border-radius:99px">Đặt lại mật khẩu</a></p>`,
+      `<p>Xin chào ${esc(payload.fullName)}, mật khẩu tài khoản Sắc Chằm của bạn vừa được ${how}. Mọi thiết bị khác đã bị đăng xuất.</p><p><strong>Không phải bạn?</strong> Hãy đặt lại mật khẩu ngay và liên hệ Sắc Chằm.</p><p><a href="${esc(url)}" style="display:inline-block;background:#a83b2e;color:#fff;text-decoration:none;padding:12px 22px;border-radius:99px">Đặt lại mật khẩu</a></p>`,
     );
-    return { subject: 'NONA — Mật khẩu của bạn đã được thay đổi', text, html };
+    return { subject: 'Sắc Chằm — Mật khẩu của bạn đã được thay đổi', text, html };
   }
 
   if (type === 'order.placed') {
@@ -153,7 +153,7 @@ export function renderEmail(
     const text = [
       `Xin chào ${p.customerName},`,
       '',
-      `Cảm ơn bạn đã đặt hàng tại NONA. Mã đơn hàng: ${group(p.orderCode)}`,
+      `Cảm ơn bạn đã đặt hàng tại Sắc Chằm. Mã đơn hàng: ${group(p.orderCode)}`,
       ...(p.awaitingConfirmation
         ? [
             '',
@@ -189,8 +189,8 @@ export function renderEmail(
     );
     return {
       subject: p.awaitingConfirmation
-        ? `NONA — Đã nhận đơn hàng ${group(p.orderCode)}`
-        : `NONA — Xác nhận đơn hàng ${group(p.orderCode)}`,
+        ? `Sắc Chằm — Đã nhận đơn hàng ${group(p.orderCode)}`
+        : `Sắc Chằm — Xác nhận đơn hàng ${group(p.orderCode)}`,
       text,
       html,
     };
@@ -221,7 +221,7 @@ export function renderEmail(
       `Đơn hàng ${group(code)} ${copy.subject}`,
       `<p>Xin chào ${esc(payload.customerName)},</p><p>${esc(copy.lead)}</p>${extra.map((e) => `<p style="color:#6e756f">${esc(e)}</p>`).join('')}<p><a href="${esc(url)}" style="display:inline-block;background:#a83b2e;color:#fff;text-decoration:none;padding:12px 22px;border-radius:99px">Xem đơn hàng</a></p>`,
     );
-    return { subject: `NONA — Đơn hàng ${group(code)} ${copy.subject}`, text, html };
+    return { subject: `Sắc Chằm — Đơn hàng ${group(code)} ${copy.subject}`, text, html };
   }
 
   if (type === 'design.reviewed') {
@@ -237,7 +237,7 @@ export function renderEmail(
       '',
       `Thiết kế "${title}" (phiên bản ${payload.versionNo}) ${approved ? 'đã được duyệt' : 'cần chỉnh sửa'}.`,
       lead,
-      ...(note ? [`Ghi chú từ NONA: ${note}`] : []),
+      ...(note ? [`Ghi chú từ Sắc Chằm: ${note}`] : []),
       '',
       `Mở thiết kế: ${url}`,
     ].join('\n');
@@ -246,7 +246,7 @@ export function renderEmail(
       `<p>Thiết kế <strong>${esc(title)}</strong> (phiên bản ${esc(payload.versionNo)}) ${approved ? 'đã được duyệt' : 'cần chỉnh sửa'}.</p><p>${esc(lead)}</p>${note ? `<p style="padding:12px 16px;background:#faf8f2;border-radius:10px">${esc(note)}</p>` : ''}<p><a href="${esc(url)}" style="display:inline-block;background:#a83b2e;color:#fff;text-decoration:none;padding:12px 22px;border-radius:99px">Mở thiết kế</a></p>`,
     );
     return {
-      subject: `NONA — Thiết kế "${title}" ${approved ? 'đã được duyệt' : 'cần chỉnh sửa'}`,
+      subject: `Sắc Chằm — Thiết kế "${title}" ${approved ? 'đã được duyệt' : 'cần chỉnh sửa'}`,
       text,
       html,
     };
@@ -257,16 +257,16 @@ export function renderEmail(
     const text = [
       `Xin chào ${payload.fullName},`,
       '',
-      'Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản NONA của bạn.',
+      'Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản Sắc Chằm của bạn.',
       `Đặt lại mật khẩu (hiệu lực 1 giờ): ${url}`,
       '',
       'Nếu bạn không yêu cầu, hãy bỏ qua email này — mật khẩu của bạn vẫn an toàn.',
     ].join('\n');
     const html = layout(
       'Đặt lại mật khẩu',
-      `<p>Xin chào ${esc(payload.fullName)},</p><p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản NONA của bạn. Liên kết có hiệu lực trong 1 giờ.</p><p><a href="${esc(url)}" style="display:inline-block;background:#a83b2e;color:#fff;text-decoration:none;padding:12px 22px;border-radius:99px">Đặt lại mật khẩu</a></p><p style="color:#6e756f;font-size:13px">Nếu bạn không yêu cầu, hãy bỏ qua email này — mật khẩu của bạn vẫn an toàn.</p>`,
+      `<p>Xin chào ${esc(payload.fullName)},</p><p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản Sắc Chằm của bạn. Liên kết có hiệu lực trong 1 giờ.</p><p><a href="${esc(url)}" style="display:inline-block;background:#a83b2e;color:#fff;text-decoration:none;padding:12px 22px;border-radius:99px">Đặt lại mật khẩu</a></p><p style="color:#6e756f;font-size:13px">Nếu bạn không yêu cầu, hãy bỏ qua email này — mật khẩu của bạn vẫn an toàn.</p>`,
     );
-    return { subject: 'NONA — Đặt lại mật khẩu', text, html };
+    return { subject: 'Sắc Chằm — Đặt lại mật khẩu', text, html };
   }
   return null;
 }

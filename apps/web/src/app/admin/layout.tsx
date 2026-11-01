@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: { default: 'Quản trị', template: '%s | NONA Admin' },
+  title: { default: 'Quản trị', template: '%s | Sắc Chằm Admin' },
   robots: { index: false, follow: false },
 };
 
