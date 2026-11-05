@@ -1,6 +1,6 @@
 export const SITE = {
   name: 'Sắc Chằm',
-  tagline: 'Gìn giữ nét Việt, thêu sắc hôm nay.',
+  tagline: 'Chằm nét xưa, gài duyên nay.',
   description:
     'Sắc Chằm — sản phẩm thủ công mang bản sắc Việt, được kể lại bằng một ngôn ngữ gần gũi và hiện đại.',
 } as const;

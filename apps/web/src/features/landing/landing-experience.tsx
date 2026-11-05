@@ -1,4 +1,4 @@
-import { type LandingContent, type ProductListItem } from '@nona/contracts';
+import { type LandingContent, type PageImages, type ProductListItem } from '@nona/contracts';
 import Link from 'next/link';
 import { BannerSlider } from '@/components/ui/banner-slider';
 import { ABOUT_BANNER } from '@/lib/banner';
@@ -14,15 +14,23 @@ const ABOUT_VALUES = [
   },
 ];
 /** Photos under the story: workers, the hat from behind, the embroidery (replace the files to change them). */
-const ABOUT_GALLERY = ['/brand/about-craft.jpg', '/brand/about-story.jpg', '/brand/about-hero.jpg'];
+const ABOUT_GALLERY = [
+  '/brand/about-craft.jpg',
+  '/brand/about-team.jpg',
+  '/brand/about-making.jpg',
+];
 
 /** The Giới thiệu page body. The header and footer come from the site shell like every other page. */
 export function LandingExperience({
   products,
+  images,
 }: {
   content?: LandingContent;
   products: ProductListItem[];
+  /** Pictures chosen in the admin; a missing one uses the built-in picture. */
+  images?: PageImages;
 }) {
+  const gallery = ABOUT_GALLERY.map((src, i) => images?.aboutGallery[i] ?? src);
   return (
     <div className="ab-page">
       <main>
@@ -83,7 +91,7 @@ export function LandingExperience({
         </section>
 
         <ul className="ab-gallery" aria-label="Hình ảnh Sắc Chằm">
-          {ABOUT_GALLERY.map((src) => (
+          {gallery.map((src) => (
             <li key={src}>
               <img src={src} alt="" loading="lazy" />
             </li>
@@ -93,10 +101,10 @@ export function LandingExperience({
         <section className="ab-core" aria-labelledby="ab-core-title">
           <h2 id="ab-core-title">Giá trị cốt lõi</h2>
           <ul>
-            {ABOUT_VALUES.map((v) => (
+            {ABOUT_VALUES.map((v, i) => (
               <li key={v.label}>
                 <span className="ab-oval">
-                  <img src={v.image} alt="" loading="lazy" />
+                  <img src={images?.aboutValues[i] ?? v.image} alt="" loading="lazy" />
                 </span>
                 <strong>{v.label}</strong>
               </li>

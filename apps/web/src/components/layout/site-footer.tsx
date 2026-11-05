@@ -10,7 +10,7 @@ export function SiteFooter({ contact }: { contact: ContactSettings }) {
     <footer className="site-footer">
       <div className="footer-brand-column">
         <Brand />
-        <p>{contact.description || SITE.tagline}</p>
+        <p>{SITE.tagline}</p>
       </div>
       <nav className="footer-links" aria-label="Liên kết nhanh">
         <strong>Liên kết nhanh</strong>

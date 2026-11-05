@@ -66,6 +66,13 @@ export class OrdersController {
     @Req() req: Req,
     @Res({ passthrough: true }) res: Response,
   ) {
+    // staff accounts can browse the checkout but never place an order (it would fake the shop's sales figures)
+    if (req.auth && req.auth.role !== 'CUSTOMER')
+      throw new AppError(
+        'FORBIDDEN',
+        403,
+        'Tài khoản quản trị không thể đặt hàng. Hãy dùng tài khoản khách hàng.',
+      );
     const key = IdempotencyService.requireKey(rawKey);
     const input = parseInput(placeOrderSchema, body);
     const user = req.auth ? { id: req.auth.userId, email: req.auth.email } : null;

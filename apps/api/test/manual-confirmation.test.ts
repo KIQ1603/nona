@@ -125,13 +125,11 @@ describe('a cash-on-delivery order waits for staff to confirm it by hand', () =>
       .patch(`/v1/admin/orders/${id}/status`)
       .send({ to: 'CANCELLED', version: d.version });
     expect(noReason.status).toBe(400);
-    const res = await api
-      .patch(`/v1/admin/orders/${id}/status`)
-      .send({
-        to: 'CANCELLED',
-        version: d.version,
-        reason: 'Gọi không được, số điện thoại không đúng',
-      });
+    const res = await api.patch(`/v1/admin/orders/${id}/status`).send({
+      to: 'CANCELLED',
+      version: d.version,
+      reason: 'Gọi không được, số điện thoại không đúng',
+    });
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     expect((await detail(api, id)).status).toBe('CANCELLED');
     expect(await stock(variantId)).toBe(5);
@@ -141,5 +139,25 @@ describe('a cash-on-delivery order waits for staff to confirm it by hand', () =>
     await setManual(false);
     const { order } = await placeCod();
     expect(order.status).toBe('CONFIRMED');
+  });
+});
+
+describe('staff accounts cannot place orders (it would fake the shop sales)', () => {
+  it.each(['ADMIN', 'FULFILLMENT'] as const)('refuses an order from a %s account', async (role) => {
+    const cat = await createCategory(pool);
+    const p = await createProduct(pool, {
+      categoryId: cat,
+      variants: [{ price: 100_000, stock: 5 }],
+    });
+    const api = as(app, await login(app, (await createUser(pool, role)).email));
+    await api.post('/v1/cart/items').send({ variantId: p.variantIds[0], quantity: 1 });
+    const res = await api.post('/v1/orders').set('Idempotency-Key', randomUUID()).send({
+      shippingAddress: address,
+      paymentMethod: 'COD',
+      expectedTotalVnd: 130_000,
+    });
+    expect(res.status).toBe(403);
+    expect((await pool.query('SELECT 1 FROM orders')).rowCount).toBe(0);
+    expect(await stock(p.variantIds[0]!)).toBe(5);
   });
 });

@@ -21,7 +21,7 @@ const config: NextConfig = {
         // Uploaded product media (seed images in /public/media/seed are served first from disk).
         // only the public prefixes are proxied: customers' design files (designs/) are never reachable here
         {
-          source: '/media/:prefix(products|articles|custom)/:path*',
+          source: '/media/:prefix(products|articles|custom|pages)/:path*',
           destination: `${MEDIA_ORIGIN}/:prefix/:path*`,
         },
       ],

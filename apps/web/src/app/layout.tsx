@@ -46,7 +46,7 @@ const hero = Cormorant_Garamond({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: 'Sắc Chằm — Gìn giữ nét Việt', template: '%s | Sắc Chằm' },
+  title: { default: 'Sắc Chằm — Chằm nét xưa, gài duyên nay', template: '%s | Sắc Chằm' },
   description: SITE.description,
   icons: { icon: '/brand/logo-sac-cham.png', apple: '/brand/logo-sac-cham.png' },
   openGraph: { siteName: 'Sắc Chằm', locale: 'vi_VN', type: 'website' },

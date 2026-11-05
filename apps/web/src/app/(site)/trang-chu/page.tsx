@@ -5,6 +5,7 @@ import { NonLaCard } from '@/features/catalog/components/nonla-card';
 import { getCustomCatalog } from '@/features/custom/custom.api';
 import { BannerSlider } from '@/components/ui/banner-slider';
 import { DesignShowcase } from '@/features/home/design-showcase';
+import { getPageImages } from '@/features/pages/pages.api';
 import { getMe } from '@/lib/admin-server';
 import { HOME_BANNER } from '@/lib/banner';
 
@@ -26,11 +27,12 @@ const TYPE_PHOTOS: Record<string, string> = {
  * the site shell.
  */
 export default async function CustomerHomePage() {
-  const [user, categories, flagged, customCatalog] = await Promise.all([
+  const [user, categories, flagged, customCatalog, pageImages] = await Promise.all([
     getMe().catch(() => null),
     getCategories(),
     getProducts({ featured: 'true', sort: 'featured', pageSize: 8 }),
     getCustomCatalog().catch(() => null),
+    getPageImages(),
   ]);
   // nothing flagged as featured yet: show the first products rather than an empty block
   const featured =
@@ -40,6 +42,7 @@ export default async function CustomerHomePage() {
     types.slice(0, 6).map(async (t) => ({
       type: t,
       image:
+        pageImages.homeTypes[t.slug] ??
         TYPE_PHOTOS[t.slug] ??
         (await getProducts({ category: t.slug, sort: 'featured', pageSize: 1 })).items[0]?.image
           ?.url ??
@@ -118,7 +121,11 @@ export default async function CustomerHomePage() {
 
       <section className="hm-story" aria-labelledby="hm-story-title">
         <div className="hm-story-img">
-          <img src="/brand/about-craft.jpg" alt="Nghệ nhân chằm nón lá" loading="lazy" />
+          <img
+            src={pageImages.homeAbout ?? '/brand/about-craft.jpg'}
+            alt="Nghệ nhân chằm nón lá"
+            loading="lazy"
+          />
         </div>
         <div className="hm-story-copy">
           <h2 id="hm-story-title">Về Sắc Chằm</h2>

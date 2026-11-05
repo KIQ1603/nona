@@ -1,10 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import {
+  PAGE_GALLERY_SLOTS,
+  PAGE_VALUE_SLOTS,
   SETTING_SCHEMAS,
   type AdminSettings,
   type CustomOptions,
   type LandingContent,
+  type PageImages,
   type SettingKey,
   type StorefrontSettings,
 } from '@nona/contracts';
@@ -52,6 +55,7 @@ const DEFAULTS = {
     testimonials: { eyebrow: 'Khách hàng nói gì', items: [] },
     order: { eyebrow: 'Đặt hàng', titleTop: '', titleAccent: '', titleBottom: '', text: '' },
   },
+  pages: { homeTypes: {}, homeAbout: null, aboutGallery: [], aboutValues: [] },
   custom: {
     enabled: false,
     requireApproval: false,
@@ -114,6 +118,24 @@ export class SettingsService {
           : { ...DEFAULTS.announcement },
       freeShippingThresholdVnd: shipping.success ? shipping.data.freeShippingThresholdVnd : null,
       flatShippingFeeVnd: shipping.success ? shipping.data.flatFeeVnd : 0,
+    };
+  }
+
+  /** Page pictures chosen by the admin, as loadable URLs; anything missing or invalid degrades to the built-in default. */
+  async getPageImages(mediaBase: string): Promise<PageImages> {
+    const rows = await this.rows();
+    const parsed = SETTING_SCHEMAS.pages.safeParse(rows.get('pages')?.value);
+    const p = parsed.success ? parsed.data : DEFAULTS.pages;
+    const url = (key: string | null | undefined) => (key ? `${mediaBase}/${key}` : null);
+    const slots = (keys: readonly (string | null)[], n: number) =>
+      Array.from({ length: n }, (_, i) => url(keys[i]));
+    return {
+      homeTypes: Object.fromEntries(
+        Object.entries(p.homeTypes).map(([k, v]) => [k, `${mediaBase}/${v}`]),
+      ),
+      homeAbout: url(p.homeAbout),
+      aboutGallery: slots(p.aboutGallery, PAGE_GALLERY_SLOTS),
+      aboutValues: slots(p.aboutValues, PAGE_VALUE_SLOTS),
     };
   }
 
@@ -198,6 +220,7 @@ export class SettingsService {
       custom: pick('custom') as AdminSettings['custom'],
       contact: pick('contact') as AdminSettings['contact'],
       landing: pick('landing') as AdminSettings['landing'],
+      pages: pick('pages') as AdminSettings['pages'],
     };
   }
 

@@ -94,3 +94,5 @@ Migration 0024: `users.email` is nullable (CHECK: email or phone), unique login 
 - `categories.parent_id` (nullable, self reference, `ON DELETE RESTRICT`, `parent_id <> id`). A category without a parent is a **product type** (Nón lá, Móc khóa, Kẹp tóc…); one with a parent is a **group** inside that type. Two levels only, enforced by the admin API (a parent must itself have no parent; a type that has groups cannot get a parent). A product belongs to one category: a group, or a type directly.
 - `products.is_featured boolean NOT NULL DEFAULT false` (partial index): shown in the "Sản phẩm nổi bật" block of its type.
 - Backfill: the types `non-la`, `moc-khoa`, `kep-toc` are inserted and every existing category becomes a group of `non-la` (all earlier products were hats). Rollback: set `parent_id` to null and drop the columns after the release is stable.
+
+`site_settings.pages` (migration 0029): `{homeTypes: {slug: key}, homeAbout, aboutGallery[], aboutValues[]}` — object-store keys (`pages/<uuid>.webp`) of the pictures an admin chose for Trang chủ and Giới thiệu; empty = built-in defaults.

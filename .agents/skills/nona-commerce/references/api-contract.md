@@ -221,3 +221,9 @@ Use `409 Conflict` for stale state, duplicate operations, invalid transitions, a
 - Layer inputs: `MOTIF {motifId, colorId?, x, y, rotation}` and `TEXT {text, fontId, colorId?, x, y, rotation}`; `scale` is ignored and stored as 1. `text` is exactly one letter (400 `VALIDATION_ERROR` otherwise); `colorId` must be a colour of `options.stickerColors` (400 `DESIGN_INVALID` "màu ... không hợp lệ" on create/update/submit). Layer DTOs carry `colorId` (null = first colour).
 - `options` (also in `GET /v1/custom/catalog` and the admin settings `custom` value): `stickerColors [{id, name, hex}]`, `letterHeightCm`, `maxTextLength` (letters per entry), `allowText`, `maxLayers` (integer 1–200 or `null` = no limit set by the shop; an empty admin field saves `null`; designs are always capped at 200 layers as a safety ceiling) and each motif's `colorable`.
 - Order snapshot layers: `{kind, summary, charmCode, charmName, colorName}`.
+
+## Page pictures (Trang chủ / Giới thiệu)
+
+- `GET /v1/storefront/pages` (public, cached 15 s) -> `{homeTypes: {<categorySlug>: url}, homeAbout: url|null, aboutGallery: (url|null)[3], aboutValues: (url|null)[4]}`. A missing/`null` entry means the page uses its built-in picture from `/public/brand`.
+- `POST /v1/admin/pages/image` (`settings:write`, multipart `file`, JPEG/PNG/WebP, <= 8 MB, each side >= 300 px) -> `{imageKey: "pages/<uuid>.webp", imageUrl, width, height}`; re-encoded to WebP (max 1600 px), stored in the object store and audited (`pages.image_upload`).
+- `PATCH /v1/admin/settings/pages {version, value: {homeTypes, homeAbout, aboutGallery[<=3], aboutValues[<=4]}}` saves which uploaded keys fill which slot. Only keys of the form `pages/<id>.webp` are accepted (strict schema).

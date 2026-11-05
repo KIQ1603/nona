@@ -132,7 +132,7 @@
 }
 .hm-type-img {
   width: 100%;
-  aspect-ratio: 1.5;
+  aspect-ratio: 1.25;
   display: block;
   overflow: hidden;
   border-radius: 16px;

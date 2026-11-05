@@ -39,6 +39,7 @@ export function CustomOptionsForm({ initial }: { initial: Custom }) {
   const [colors, setColors] = useState(o.stickerColors);
   const [letterCm, setLetterCm] = useState(String(o.letterHeightCm));
   const [layersMax, setLayersMax] = useState(o.maxLayers === null ? '' : String(o.maxLayers));
+  const [textPrice, setTextPrice] = useState(String(o.textPriceVnd));
   const [lettersMax, setLettersMax] = useState(String(o.maxTextLength));
   const [allowText, setAllowText] = useState(o.allowText);
   const [savingLook, setSavingLook] = useState(false);
@@ -51,6 +52,7 @@ export function CustomOptionsForm({ initial }: { initial: Custom }) {
           ...o,
           allowText,
           letterHeightCm: Number(letterCm),
+          textPriceVnd: Math.max(0, Math.min(100_000_000, Math.floor(Number(textPrice) || 0))),
           // empty = no limit
           maxLayers:
             layersMax.trim() === ''
@@ -151,7 +153,7 @@ export function CustomOptionsForm({ initial }: { initial: Custom }) {
           />{' '}
           <span>Cho khách thêm chữ (mỗi chữ cái là một sticker riêng, kéo thả riêng)</span>
         </label>
-        <div className="form-grid" style={{ '--cols': 3 } as React.CSSProperties}>
+        <div className="form-grid" style={{ '--cols': 4 } as React.CSSProperties}>
           <label className="field">
             <span>Chiều cao một chữ (cm)</span>
             <input
@@ -163,6 +165,17 @@ export function CustomOptionsForm({ initial }: { initial: Custom }) {
               onChange={(e) => setLetterCm(e.target.value)}
             />
             <small>Cỡ thật trên sản phẩm; tỉ lệ theo chiều rộng thật của sản phẩm</small>
+          </label>
+          <label className="field">
+            <span>Giá mỗi chữ cái (đ)</span>
+            <input
+              type="number"
+              min={0}
+              step={500}
+              value={textPrice}
+              onChange={(e) => setTextPrice(e.target.value)}
+            />
+            <small>Mỗi chữ cái là một sticker, cộng vào giá thiết kế. 0 = miễn phí.</small>
           </label>
           <label className="field">
             <span>Số chữ tối đa mỗi lần gõ</span>
@@ -197,7 +210,7 @@ export function CustomOptionsForm({ initial }: { initial: Custom }) {
           disabled={savingLook}
           onClick={() => void saveLook()}
         >
-          Lưu màu và cỡ chữ
+          Lưu màu, giá và cỡ chữ
         </button>
       </div>
 

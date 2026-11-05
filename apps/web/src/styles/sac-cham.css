@@ -512,9 +512,10 @@
 .sc-footer-brand p,
 .footer-brand-column p {
   margin: 14px 0 0;
-  color: rgba(255, 243, 233, 0.75);
-  font-size: 13px;
-  line-height: 1.75;
+  color: rgba(255, 243, 233, 0.92);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.7;
 }
 .sc-footer > div:not(.sc-footer-brand),
 .footer-links,

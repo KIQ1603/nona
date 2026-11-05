@@ -428,26 +428,30 @@ export function renderHatSvg(
       const color = colorOf(options, l.colorId);
       const glyph = l.fontId === 'bubble' ? bubbleGlyph(l.text) : null;
       if (glyph) {
-        // Candy letter like the shop's sticker sheet: a puffy body (the glyph fattened by its own stroke), a darker rim,
-        // a light highlight on the top-left edge, a soft shade on the bottom-right and a glossy blob.
+        // Candy letter like the shop's sticker sheet: a fat, puffy body (the glyph fattened by its own stroke) with an inner
+        // light edge on the top-left, a soft inner shade on the bottom-right and a glossy blob (SVG filters, so the
+        // browser preview and the server-rendered PNG match).
         const s = (Number(size) * 0.72) / 100;
-        const hl = `${uid}-bh-${color.id}`;
-        if (!tints.has(hl)) {
-          tints.add(hl);
+        const cf = `${uid}-candy-${color.id}`;
+        if (!tints.has(cf)) {
+          tints.add(cf);
           defs.push(
-            `<linearGradient id="${hl}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>`,
-            `<linearGradient id="${uid}-bd-${color.id}" x1="0" y1="0" x2="1" y2="1"><stop offset=".45" stop-color="${shade(color.hex, 0.45)}" stop-opacity="0"/><stop offset="1" stop-color="${shade(color.hex, 0.45)}" stop-opacity=".55"/></linearGradient>`,
+            `<filter id="${cf}" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">` +
+              `<feOffset in="SourceAlpha" dx="2.4" dy="3.2" result="o1"/><feComposite in="SourceAlpha" in2="o1" operator="out" result="e1"/>` +
+              `<feGaussianBlur in="e1" stdDeviation="1.7" result="b1"/><feFlood flood-color="#fff" flood-opacity=".95"/><feComposite in2="b1" operator="in" result="hi"/>` +
+              `<feOffset in="SourceAlpha" dx="-2.6" dy="-3.4" result="o2"/><feComposite in="SourceAlpha" in2="o2" operator="out" result="e2"/>` +
+              `<feGaussianBlur in="e2" stdDeviation="2.2" result="b2"/><feFlood flood-color="${shade(color.hex, 0.5)}" flood-opacity=".6"/><feComposite in2="b2" operator="in" result="sh"/>` +
+              `<feMerge result="m"><feMergeNode in="SourceGraphic"/><feMergeNode in="sh"/><feMergeNode in="hi"/></feMerge><feComposite in="m" in2="SourceAlpha" operator="in"/></filter>`,
           );
         }
         const d = glyph.d;
+        const gw = glyph.w;
         body.push(
-          `<g transform="${t}"><g transform="scale(${n2(s)}) translate(${n2(-glyph.w / 2)} -50)" stroke-linejoin="round" stroke-linecap="round">` +
-            `<path d="${d}" transform="translate(1.4 2)" fill="#3b1f2a" fill-opacity=".14" stroke="#3b1f2a" stroke-opacity=".14" stroke-width="5.4"/>` +
-            `<path d="${d}" fill="${color.edge}" stroke="${color.edge}" stroke-width="5.4"/>` +
-            `<path d="${d}" fill="${color.hex}" stroke="${color.hex}" stroke-width="3.6"/>` +
-            `<path d="${d}" transform="translate(-.6 -.8)" fill="none" stroke="url(#${hl})" stroke-width="1.9"/>` +
-            `<path d="${d}" transform="translate(.8 1)" fill="none" stroke="url(#${uid}-bd-${color.id})" stroke-width="1.9"/>` +
-            `<ellipse cx="${n2(glyph.w * 0.3)}" cy="14" rx="${n2(Math.max(3.5, glyph.w * 0.1))}" ry="3.2" transform="rotate(-25 ${n2(glyph.w * 0.3)} 14)" fill="#fff" fill-opacity=".7"/>` +
+          `<g transform="${t}"><g transform="scale(${n2(s)}) translate(${n2(-gw / 2)} -50)" stroke-linejoin="round" stroke-linecap="round">` +
+            `<path d="${d}" transform="translate(1.6 2.6)" fill="#3b1f2a" fill-opacity=".16" stroke="#3b1f2a" stroke-opacity=".16" stroke-width="8"/>` +
+            `<g filter="url(#${cf})"><path d="${d}" fill="${color.hex}" stroke="${color.hex}" stroke-width="8"/></g>` +
+            `<ellipse cx="${n2(gw * 0.28)}" cy="13" rx="${n2(Math.max(3.2, gw * 0.09))}" ry="2.8" transform="rotate(-28 ${n2(gw * 0.28)} 13)" fill="#fff" fill-opacity=".85"/>` +
+            `<circle cx="${n2(gw * 0.28 + Math.max(3.2, gw * 0.09) + 3)}" cy="17.5" r="1.4" fill="#fff" fill-opacity=".8"/>` +
             `</g></g>`,
         );
         continue;

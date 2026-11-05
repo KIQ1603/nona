@@ -422,8 +422,9 @@ describe('stickers and letters in five pastel colours', () => {
       ...pos,
     });
     const svg = svgOf([letter('A', 'pink')]);
-    expect(svg).toContain('<linearGradient id="u-bh-pink"'); // highlight on the top-left edge
-    expect(svg).toContain('stroke="url(#u-bh-pink)"');
+    expect(svg).toContain('<filter id="u-candy-pink"'); // puffy inner light and shade
+    expect(svg).toContain('filter="url(#u-candy-pink)"');
+    expect(svg).toContain('fill="#ebb5c8"'); // the chosen palette colour
     expect(svg).not.toContain('<text'); // an outline, so no font is needed on the server
     expect(bubbleGlyph('ằ')?.char).toBe('A');
     expect(bubbleGlyph('đ')?.char).toBe('D');

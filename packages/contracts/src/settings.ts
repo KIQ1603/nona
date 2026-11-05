@@ -195,6 +195,32 @@ export const landingBaseSchema = z.object({
 export const landingSettingSchema = landingBaseSchema.strict();
 export type LandingContent = z.infer<typeof landingSettingSchema>;
 
+/** Object-store key of a page picture; only keys produced by our own upload are accepted. */
+export const pageImageKey = z.string().regex(/^pages\/[a-z0-9-]{8,64}\.webp$/);
+export const PAGE_GALLERY_SLOTS = 3;
+export const PAGE_VALUE_SLOTS = 4;
+const pagesBaseSchema = z.object({
+  /** Picture of each product type card on Trang chủ, by category slug. Missing = the built-in default. */
+  homeTypes: z.record(z.string().regex(/^[a-z0-9-]{1,60}$/), pageImageKey).default({}),
+  /** "Về Sắc Chằm" picture on Trang chủ. */
+  homeAbout: pageImageKey.nullable().default(null),
+  /** The strip under "Câu chuyện của chúng tôi" on Giới thiệu; a null slot = the built-in default. */
+  aboutGallery: z.array(pageImageKey.nullable()).max(PAGE_GALLERY_SLOTS).default([]),
+  /** The four "Giá trị cốt lõi" pictures on Giới thiệu; a null slot = the built-in default. */
+  aboutValues: z.array(pageImageKey.nullable()).max(PAGE_VALUE_SLOTS).default([]),
+});
+export const pagesSettingSchema = pagesBaseSchema.strict();
+export type PagesSetting = z.infer<typeof pagesSettingSchema>;
+
+/** What the storefront receives: picture URLs (null = use the default). */
+export const pageImagesSchema = z.object({
+  homeTypes: z.record(z.string()),
+  homeAbout: z.string().nullable(),
+  aboutGallery: z.array(z.string().nullable()),
+  aboutValues: z.array(z.string().nullable()),
+});
+export type PageImages = z.infer<typeof pageImagesSchema>;
+
 export const SETTING_SCHEMAS = {
   announcement: announcementSettingSchema,
   shipping: shippingSettingSchema,
@@ -202,6 +228,7 @@ export const SETTING_SCHEMAS = {
   custom: customOptionsSchema,
   contact: contactSettingSchema,
   landing: landingSettingSchema,
+  pages: pagesSettingSchema,
 } as const;
 export type SettingKey = keyof typeof SETTING_SCHEMAS;
 
@@ -220,6 +247,7 @@ export const adminSettingsSchema = z.object({
   custom: customOptionsBaseSchema.extend({ version: z.number().int() }),
   contact: contactBaseSchema.extend({ version: z.number().int() }),
   landing: landingBaseSchema.extend({ version: z.number().int() }),
+  pages: pagesBaseSchema.extend({ version: z.number().int() }),
 });
 export type AdminSettings = z.infer<typeof adminSettingsSchema>;
 

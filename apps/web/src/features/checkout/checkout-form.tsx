@@ -42,6 +42,8 @@ export function CheckoutForm({ lineIds }: { lineIds?: string[] }) {
   const [notice, setNotice] = useState<Notice | null>(null);
   const attempt = useRef<{ hash: string; key: string } | null>(null);
 
+  // staff accounts can look at the checkout but not order (the API refuses too)
+  const isStaff = status === 'user' && user?.role !== 'CUSTOMER';
   const useSaved = status === 'user' && addressId !== 'new';
   const province =
     (useSaved ? saved.find((a) => a.id === addressId)?.province : address.province)?.trim() ?? '';
@@ -470,6 +472,7 @@ export function CheckoutForm({ lineIds }: { lineIds?: string[] }) {
             type="submit"
             disabled={
               submitting ||
+              isStaff ||
               !quote.canCheckout ||
               (quote.phoneVerificationRequired && !phoneOk) ||
               (!useSaved && !normalizeVnMobile(address.phone))
@@ -481,6 +484,11 @@ export function CheckoutForm({ lineIds }: { lineIds?: string[] }) {
                 ? `Thanh toán · ${formatVnd(quote.totalVnd)}`
                 : `Đặt hàng · ${formatVnd(quote.totalVnd)}`}
           </button>
+          {isStaff && (
+            <small className="fine-print phone-need">
+              Tài khoản quản trị không thể đặt hàng. Hãy đăng nhập bằng tài khoản khách hàng.
+            </small>
+          )}
           {quote.phoneVerificationRequired && !phoneOk && (
             <small className="fine-print phone-need">
               Hãy xác thực số điện thoại nhận hàng để đặt hàng.

@@ -89,3 +89,5 @@ Test desktop/mobile navigation, filter URL restoration, cart failures, checkout 
 - **Admin orders filter:** "Trạng thái" lists the statuses in lifecycle order — Chờ xác nhận, Chờ thanh toán, Đã thanh toán, Đã xác nhận, Đang chuẩn bị, Sẵn sàng giao, Đang giao, Hoàn tất — followed by the side branches (cancellation, cancelled, failed, expired, refunds). `DRAFT` is not offered (orders are never stored as drafts).
 - **No articles:** there is no "Bài viết" menu item, public page or admin screen.
 - **Checkout payment:** only cash on delivery (COD) is offered; the VNPay/QR option is hidden from the form. The online-payment backend stays in place but unused; `POST /v1/orders` still accepts `VNPAY`, so re-adding the option is a UI change only.
+
+- **Page pictures are admin-configurable:** Admin → "Ảnh Trang chủ và Giới thiệu" (`/admin/page-images`, `settings:write`) changes the product-type card pictures and the "Về Sắc Chằm" picture on Trang chủ, and the story strip (3) and "Giá trị cốt lõi" (4) pictures on Giới thiệu. Each slot can be reset to the built-in picture. Text stays in code. Public media serves the `pages/` prefix through the `/media` rewrite.
