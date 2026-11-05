@@ -144,62 +144,99 @@ export function CustomOptionsForm({ initial }: { initial: Custom }) {
         >
           + Thêm màu
         </button>
-        <h3 className="form-section">Chữ và số lớp</h3>
+        <button
+          type="button"
+          className="btn btn-primary"
+          disabled={savingLook}
+          onClick={() => void saveLook()}
+        >
+          Lưu màu
+        </button>
+      </div>
+
+      <div className="admin-card">
+        <h2>Chữ</h2>
+        <p className="card-sub">
+          Khách gõ một từ, mỗi chữ cái trở thành một sticker riêng (kiểu chữ kẹo) và kéo thả riêng.
+          Tắt mục này thì khách không thấy thẻ “Chữ” trong trang Tự thiết kế.
+        </p>
         <label className="row-inline field">
           <input
             type="checkbox"
             checked={allowText}
             onChange={(e) => setAllowText(e.target.checked)}
           />{' '}
-          <span>Cho khách thêm chữ (mỗi chữ cái là một sticker riêng, kéo thả riêng)</span>
+          <span>
+            <strong>{allowText ? 'Đang bật' : 'Đang tắt'}</strong>: cho khách thêm chữ
+          </span>
         </label>
-        <div className="form-grid" style={{ '--cols': 4 } as React.CSSProperties}>
-          <label className="field">
-            <span>Chiều cao một chữ (cm)</span>
-            <input
-              type="number"
-              min={0.5}
-              max={30}
-              step={0.5}
-              value={letterCm}
-              onChange={(e) => setLetterCm(e.target.value)}
-            />
-            <small>Cỡ thật trên sản phẩm; tỉ lệ theo chiều rộng thật của sản phẩm</small>
-          </label>
-          <label className="field">
-            <span>Giá mỗi chữ cái (đ)</span>
-            <input
-              type="number"
-              min={0}
-              step={500}
-              value={textPrice}
-              onChange={(e) => setTextPrice(e.target.value)}
-            />
-            <small>Mỗi chữ cái là một sticker, cộng vào giá thiết kế. 0 = miễn phí.</small>
-          </label>
-          <label className="field">
-            <span>Số chữ tối đa mỗi lần gõ</span>
-            <input
-              type="number"
-              min={1}
-              max={60}
-              value={lettersMax}
-              onChange={(e) => setLettersMax(e.target.value)}
-            />
-          </label>
-          <label className="field">
-            <span>Số lớp tối đa trên sản phẩm</span>
-            <input
-              type="number"
-              min={1}
-              max={MAX_LAYERS_HARD}
-              placeholder="Không giới hạn"
-              value={layersMax}
-              onChange={(e) => setLayersMax(e.target.value)}
-            />
-            <small>Sticker và chữ cộng lại. Để trống = không giới hạn.</small>
-          </label>
-        </div>
+        {allowText ? (
+          <div className="form-grid" style={{ '--cols': 3 } as React.CSSProperties}>
+            <label className="field">
+              <span>Chiều cao một chữ (cm)</span>
+              <input
+                type="number"
+                min={0.5}
+                max={30}
+                step={0.5}
+                value={letterCm}
+                onChange={(e) => setLetterCm(e.target.value)}
+              />
+              <small>Cỡ thật trên sản phẩm; tỉ lệ theo chiều rộng thật của sản phẩm</small>
+            </label>
+            <label className="field">
+              <span>Giá mỗi chữ cái (đ)</span>
+              <input
+                type="number"
+                min={0}
+                step={500}
+                value={textPrice}
+                onChange={(e) => setTextPrice(e.target.value)}
+              />
+              <small>Cộng vào giá thiết kế cho mỗi chữ cái. 0 = miễn phí.</small>
+            </label>
+            <label className="field">
+              <span>Số chữ tối đa mỗi lần gõ</span>
+              <input
+                type="number"
+                min={1}
+                max={60}
+                value={lettersMax}
+                onChange={(e) => setLettersMax(e.target.value)}
+              />
+            </label>
+          </div>
+        ) : (
+          <p className="form-note">Chữ đang tắt nên các cài đặt cỡ và giá chữ được ẩn.</p>
+        )}
+        <button
+          type="button"
+          className="btn btn-primary"
+          disabled={savingLook}
+          onClick={() => void saveLook()}
+        >
+          Lưu cài đặt chữ
+        </button>
+      </div>
+
+      <div className="admin-card">
+        <h2>Số lớp trên sản phẩm</h2>
+        <p className="card-sub">
+          Tổng số sticker và chữ khách được đặt lên một sản phẩm. Điền số để giới hạn, để trống thì
+          không giới hạn.
+        </p>
+        <label className="field" style={{ maxWidth: 260 }}>
+          <span>Số lớp tối đa</span>
+          <input
+            type="number"
+            min={1}
+            max={MAX_LAYERS_HARD}
+            placeholder="Không giới hạn"
+            value={layersMax}
+            onChange={(e) => setLayersMax(e.target.value)}
+          />
+          <small>Mỗi sticker và mỗi chữ cái tính một lớp.</small>
+        </label>
         <p className="form-note">
           Kích thước sticker nhập khi thêm/sửa từng sticker (cm); chiều rộng thật của nón, móc khóa,
           kẹp tóc nhập ở trang sản phẩm. Hệ thống dùng hai số đó để sticker và chữ hiện đúng tỉ lệ.
@@ -210,7 +247,7 @@ export function CustomOptionsForm({ initial }: { initial: Custom }) {
           disabled={savingLook}
           onClick={() => void saveLook()}
         >
-          Lưu màu, giá và cỡ chữ
+          Lưu số lớp
         </button>
       </div>
 
