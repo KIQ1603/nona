@@ -346,7 +346,7 @@ describe('real sizes', () => {
     expect(detail.hatWidthCm).toBeNull();
     const patch = (hatWidthCm: number | null) =>
       api.patch(`/v1/admin/products/${productId}`).send({ hatWidthCm, version: detail.version });
-    expect((await patch(2)).status).toBe(400); // implausible
+    expect((await patch(0.5)).status).toBe(400); // implausible
     const ok = await patch(42.5);
     expect(ok.status, JSON.stringify(ok.body)).toBe(200);
     expect(ok.body.hatWidthCm).toBe(42.5);
@@ -359,6 +359,31 @@ describe('real sizes', () => {
     );
     expect(catalog.products[0]!.hatWidthCm).toBe(42.5);
     expect(catalog.options.motifs.every((m) => m.sizeCm > 0)).toBe(true);
+  });
+
+  it('scales the charms of one product (keychain, hair clip) with a per-product percentage', async () => {
+    const api = await staff('CATALOG');
+    const { productId } = await createProduct(pool, {
+      categoryId: await createCategory(pool),
+      customizable: true,
+      variants: [{ price: 400_000, stock: 5 }],
+    });
+    const detail = (await api.get(`/v1/admin/products/${productId}`)).body;
+    expect(detail.charmScale).toBe(1);
+    const patch = (body: object, version: number) =>
+      api.patch(`/v1/admin/products/${productId}`).send({ ...body, version });
+    const first = await patch({ hatWidthCm: 40 }, detail.version);
+    const bad = await patch({ charmScale: 9 }, first.body.version);
+    expect(bad.status).toBe(400);
+    const half = await patch({ charmScale: 0.5 }, first.body.version);
+    expect(half.status, JSON.stringify(half.body)).toBe(200);
+    expect(half.body.charmScale).toBe(0.5);
+    expect(half.body.hatWidthCm).toBe(40); // the admin still sees the real width
+    const catalog = customCatalogSchema.parse(
+      (await request(app.getHttpServer()).get('/v1/custom/catalog')).body,
+    );
+    // the designer measures charms against 40 / 0.5 = 80 cm, so every charm is drawn half as big
+    expect(catalog.products[0]!.hatWidthCm).toBe(80);
   });
 });
 

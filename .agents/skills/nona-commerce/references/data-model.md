@@ -96,3 +96,5 @@ Migration 0024: `users.email` is nullable (CHECK: email or phone), unique login 
 - Backfill: the types `non-la`, `moc-khoa`, `kep-toc` are inserted and every existing category becomes a group of `non-la` (all earlier products were hats). Rollback: set `parent_id` to null and drop the columns after the release is stable.
 
 `site_settings.pages` (migration 0029): `{homeTypes: {slug: key}, homeAbout, aboutGallery[], aboutValues[]}` — object-store keys (`pages/<uuid>.webp`) of the pictures an admin chose for Trang chủ and Giới thiệu; empty = built-in defaults.
+
+`products.charm_scale` (migration 0030, numeric(4,2), default 1, CHECK 0.2–5): per-product multiplier for the size of charms and letters in the designer.

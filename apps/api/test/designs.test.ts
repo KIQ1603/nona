@@ -1160,8 +1160,8 @@ describe('stored previews really contain what the customer placed', () => {
   });
 });
 
-describe('charm size is fixed by the hat, not chosen', () => {
-  it('ignores any client-supplied scale for motifs and images and stores 1', async () => {
+describe('customers resize charms, pictures and letters', () => {
+  it('stores the chosen size, defaults to 1 and refuses sizes out of range', async () => {
     const v = await base();
     const b = browser(app);
     const asset = (await upload(b, await png(400))).body;
@@ -1169,24 +1169,28 @@ describe('charm size is fixed by the hat, not chosen', () => {
       await b.post('/v1/custom-designs').send(
         body(v.variantId, {
           layers: [
-            { ...motif, scale: 3 },
-            { kind: 'IMAGE', assetId: asset.id, ...pos, scale: 0.2 },
-            { ...text(), scale: 2 },
+            { ...motif, scale: 2 },
+            { kind: 'IMAGE', assetId: asset.id, ...pos, scale: 0.5 },
+            { ...text(), scale: 1.5 },
+            { ...motif },
           ],
         }),
       ),
     );
     expect(d.latest.layers.map((l) => [l.kind, l.scale])).toEqual([
+      ['MOTIF', 2],
+      ['IMAGE', 0.5],
+      ['TEXT', 1.5],
       ['MOTIF', 1],
-      ['IMAGE', 1],
-      ['TEXT', 1], // letters, like charms, have a fixed size
     ]);
-    const free = dto(
-      await b
-        .post('/v1/custom-designs')
-        .send(body(v.variantId, { layers: [{ ...motif, x: 0.1, y: 0.9, rotation: 90 }] })),
-    );
-    expect(free.latest.layers[0]).toMatchObject({ x: 0.1, y: 0.9, rotation: 90, scale: 1 }); // dragged position and rotation kept, size not
+    const tooBig = await b
+      .post('/v1/custom-designs')
+      .send(body(v.variantId, { layers: [{ ...motif, scale: 9 }] }));
+    expect(tooBig.status).toBe(400);
+    const tooSmall = await b
+      .post('/v1/custom-designs')
+      .send(body(v.variantId, { layers: [{ ...motif, scale: 0.05 }] }));
+    expect(tooSmall.status).toBe(400);
   });
 });
 

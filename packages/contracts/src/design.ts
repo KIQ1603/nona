@@ -149,19 +149,14 @@ const position = {
   scale: z.number().min(0.2).max(3),
   rotation: z.number().min(-180).max(180),
 };
-/** Charms (motifs) and uploaded images have a fixed physical size set by the hat's proportions, never by the customer. */
-const fixed = (v: number) =>
-  z
-    .number()
-    .optional()
-    .transform(() => v);
-/** Charms can be dragged and rotated, but never resized. */
+/** Charms, letters and pictures can be dragged, rotated and resized (their own scale on top of the real size). */
 const charmPosition = {
   x: position.x,
   y: position.y,
   rotation: position.rotation,
-  scale: fixed(1),
+  scale: position.scale.default(1),
 };
+export const LAYER_SCALE = { min: 0.3, max: 3, step: 0.05 } as const;
 /** One letter per layer (letters are dragged around one by one), at the real size the shop configured. */
 const letter = z
   .string()
@@ -312,7 +307,7 @@ export function charmUnits(
       : hatHeightCm && hatHeightCm > 0 && area.height
         ? area.height / hatHeightCm
         : area.width / DEFAULT_HAT_CM;
-  return Math.max(14, Math.min(area.width * 0.9, sizeCm * unitsPerCm));
+  return Math.max(3, Math.min(area.width * 0.9, sizeCm * unitsPerCm));
 }
 /** Hat geometry shared with the editor's drag handles (viewBox units). */
 export const HAT_BOX = {

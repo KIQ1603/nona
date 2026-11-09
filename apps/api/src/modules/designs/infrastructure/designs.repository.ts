@@ -122,7 +122,7 @@ export class DesignsRepository {
   /** The base variant + product a design is built on, with live availability. */
   async baseVariant(q: Q, variantId: string) {
     const { rows } = await q.query(
-      `SELECT v.id, v.name AS variant_name, v.price_vnd, v.is_active, p.slug, p.name AS product_name, (p.status = 'PUBLISHED') AS published, p.is_customizable, p.hat_width_cm, p.hat_height_cm,
+      `SELECT v.id, v.name AS variant_name, v.price_vnd, v.is_active, p.slug, p.name AS product_name, (p.status = 'PUBLISHED') AS published, p.is_customizable, COALESCE(p.hat_width_cm, CASE WHEN p.hat_height_cm IS NULL AND p.charm_scale <> 1 THEN 40 END) / p.charm_scale AS hat_width_cm, p.hat_height_cm / p.charm_scale AS hat_height_cm,
               img.object_key AS image_key, img.width AS image_width, img.height AS image_height,
               ${availableQtySql('v')} AS available
        FROM product_variants v JOIN products p ON p.id = v.product_id

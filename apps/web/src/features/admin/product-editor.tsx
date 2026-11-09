@@ -25,6 +25,7 @@ const toForm = (p: AdminProductDetail): ProductFormState => ({
   isFeatured: p.isFeatured,
   hatWidthCm: p.hatWidthCm === null ? '' : String(p.hatWidthCm),
   hatHeightCm: p.hatHeightCm === null ? '' : String(p.hatHeightCm),
+  charmPercent: String(Math.round(p.charmScale * 100)),
   seoTitle: p.seoTitle ?? '',
   seoDescription: p.seoDescription ?? '',
 });

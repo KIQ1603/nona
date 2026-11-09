@@ -16,6 +16,7 @@ import {
   type DesignDto,
   type LayerInput,
   MAX_LAYERS_HARD,
+  LAYER_SCALE,
 } from '@nona/contracts';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -217,6 +218,8 @@ export function DesignEditor({
     if (selected !== null && l && l.kind !== 'IMAGE') setLayer(selected, { colorId: id });
   };
   const moveLayer = (i: number, x: number, y: number) => setLayer(i, { x, y });
+  const scaleTo = (i: number, s: number) =>
+    setLayer(i, { scale: Math.min(LAYER_SCALE.max, Math.max(LAYER_SCALE.min, s)) });
   const rotateTo = (i: number, deg: number) =>
     setLayer(i, { rotation: Math.max(-180, Math.min(180, Math.round(deg))) });
 
@@ -420,6 +423,7 @@ export function DesignEditor({
             onSelect={editable ? pick : undefined}
             onMove={editable ? moveLayer : undefined}
             onRotate={editable ? rotateTo : undefined}
+            onScale={editable ? scaleTo : undefined}
           />
           {sameType.length > 1 && (
             <ul className="dz-thumbs" aria-label={`Mẫu ${product.type?.name ?? ''}`}>
@@ -720,6 +724,30 @@ export function DesignEditor({
                     );
                   })}
                 </ol>
+                {selected !== null && layers[selected] && (
+                  <label className="layer-size">
+                    <span>
+                      Kích cỡ {layerName(layers[selected]!)}:{' '}
+                      <b>{Math.round(layers[selected]!.scale * 100)}%</b>
+                    </span>
+                    <input
+                      type="range"
+                      min={LAYER_SCALE.min}
+                      max={LAYER_SCALE.max}
+                      step={LAYER_SCALE.step}
+                      value={layers[selected]!.scale}
+                      onChange={(e) => scaleTo(selected, Number(e.target.value))}
+                      aria-label="Phóng to hoặc thu nhỏ"
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      onClick={() => scaleTo(selected, 1)}
+                    >
+                      Về cỡ gốc
+                    </button>
+                  </label>
+                )}
               </div>
             )}
           </fieldset>

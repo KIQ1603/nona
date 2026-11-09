@@ -224,42 +224,37 @@ describe('charm width and height', () => {
 });
 
 describe('charm size', () => {
-  it('is a fixed share of the hat: client scale is discarded for motifs, images and letters', () => {
+  it('lets the customer resize charms, pictures and letters within bounds (default 100 %)', () => {
+    const at = { x: 0.5, y: 0.5, rotation: 0 };
     expect(
-      layerInputSchema.parse({
-        kind: 'MOTIF',
-        motifId: 'star',
-        x: 0.5,
-        y: 0.5,
-        rotation: 0,
-        scale: 3,
-      }),
-    ).toMatchObject({ scale: 1 });
+      layerInputSchema.parse({ kind: 'MOTIF', motifId: 'star', ...at, scale: 2 }),
+    ).toMatchObject({ scale: 2 });
+    expect(layerInputSchema.parse({ kind: 'MOTIF', motifId: 'star', ...at })).toMatchObject({
+      scale: 1,
+    });
     expect(
-      layerInputSchema.parse({ kind: 'IMAGE', assetId: IMG, x: 0.5, y: 0.5, rotation: 0 }),
-    ).toMatchObject({ scale: 1 });
+      layerInputSchema.parse({ kind: 'TEXT', text: 'a', fontId: 'serif', ...at, scale: 0.5 }),
+    ).toMatchObject({ scale: 0.5 });
     expect(
-      layerInputSchema.parse({
-        kind: 'TEXT',
-        text: 'a',
-        fontId: 'serif',
-        x: 0.5,
-        y: 0.5,
-        rotation: 0,
-        scale: 2,
-      }),
-    ).toMatchObject({ scale: 1 }); // a letter is as big as the shop configured, never resized
+      layerInputSchema.parse({ kind: 'IMAGE', assetId: IMG, ...at, scale: 1.5 }),
+    ).toMatchObject({ scale: 1.5 });
+    for (const scale of [0.1, 3.5])
+      expect(
+        layerInputSchema.safeParse({ kind: 'MOTIF', motifId: 'star', ...at, scale }).success,
+      ).toBe(false);
   });
-  it('renders every charm at the same size regardless of the stored scale', () => {
-    const a = renderHatSvg(design([{ kind: 'MOTIF', motifId: 'star', ...pos }]), options);
-    const b = renderHatSvg(design([{ kind: 'MOTIF', motifId: 'star', ...pos, scale: 1 }]), options);
-    expect(a).toBe(b);
-    expect(a).toContain(`scale(${CHARM_SIZE / 100} ${CHARM_SIZE / 100})`);
+  it('draws a resized charm bigger or smaller than the default', () => {
+    const at = (scale: number) =>
+      renderHatSvg(design([{ kind: 'MOTIF', motifId: 'star', ...pos, scale }]), options);
+    expect(at(1)).toContain('scale(1.00)');
+    expect(at(2)).toContain('scale(2.00)');
+    expect(at(0.5)).toContain('scale(0.50)');
+    expect(at(1)).toContain(`scale(${CHARM_SIZE / 100} ${CHARM_SIZE / 100})`);
   });
 });
 
 describe('charm placement', () => {
-  it('keeps the dragged position and rotation but discards size', () => {
+  it('keeps the dragged position, rotation and size', () => {
     expect(
       layerInputSchema.parse({
         kind: 'MOTIF',
@@ -269,7 +264,7 @@ describe('charm placement', () => {
         rotation: 90,
         scale: 3,
       }),
-    ).toMatchObject({ x: 0.1, y: 0.9, rotation: 90, scale: 1 });
+    ).toMatchObject({ x: 0.1, y: 0.9, rotation: 90, scale: 3 });
     expect(
       layerInputSchema.safeParse({
         kind: 'MOTIF',

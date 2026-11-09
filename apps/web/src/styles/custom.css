@@ -683,3 +683,29 @@
   padding: 10px;
   box-sizing: border-box;
 }
+
+.scale-knob {
+  position: absolute;
+  right: -9px;
+  bottom: -9px;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  background: #fff;
+  border: 2px solid var(--color-green, #1f4d3a);
+  cursor: nwse-resize;
+  touch-action: none;
+}
+.layer-size {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 14px;
+}
+.layer-size input[type='range'] {
+  width: 100%;
+}
+.layer-size .btn {
+  justify-self: start;
+  padding: 6px 12px;
+}

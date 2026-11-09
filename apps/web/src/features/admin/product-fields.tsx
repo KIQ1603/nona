@@ -17,6 +17,8 @@ export interface ProductFormState {
   isFeatured: boolean;
   hatWidthCm: string;
   hatHeightCm: string;
+  /** Percent: 100 = charms and letters at their configured size. */
+  charmPercent: string;
   seoTitle: string;
   seoDescription: string;
 }
@@ -35,6 +37,7 @@ export const emptyProductForm = (categoryId = ''): ProductFormState => ({
   isFeatured: false,
   hatWidthCm: '60',
   hatHeightCm: '45',
+  charmPercent: '100',
   seoTitle: '',
   seoDescription: '',
 });
@@ -54,6 +57,7 @@ export const toPayload = (f: ProductFormState, includeSlug: boolean) => ({
   isFeatured: f.isFeatured,
   hatWidthCm: f.hatWidthCm.trim() ? Number(f.hatWidthCm) : null,
   hatHeightCm: f.hatHeightCm.trim() ? Number(f.hatHeightCm) : null,
+  charmScale: Math.min(5, Math.max(0.2, (Number(f.charmPercent) || 100) / 100)),
   seoTitle: f.seoTitle.trim() || null,
   seoDescription: f.seoDescription.trim() || null,
 });
@@ -224,7 +228,7 @@ export function ProductFields({
               <span>Chiều rộng nón thật (cm)</span>
               <input
                 type="number"
-                min={5}
+                min={1}
                 max={100}
                 step={0.5}
                 value={value.hatWidthCm}
@@ -237,7 +241,7 @@ export function ProductFields({
               <span>Chiều cao nón thật (cm)</span>
               <input
                 type="number"
-                min={3}
+                min={1}
                 max={100}
                 step={0.5}
                 value={value.hatHeightCm}
@@ -245,6 +249,19 @@ export function ProductFields({
                 placeholder="VD: 18"
               />
               <small>Từ đỉnh đến vành (tùy chọn)</small>
+            </label>
+            <label className="field">
+              <span>Tỉ lệ charm (%)</span>
+              <input
+                type="number"
+                min={20}
+                max={500}
+                step={5}
+                value={value.charmPercent}
+                onChange={(e) => set('charmPercent', e.target.value)}
+                placeholder="100"
+              />
+              <small>100 = đúng cỡ đã cấu hình; 50 = nhỏ một nửa; 200 = gấp đôi</small>
             </label>
           </div>
           <p className="form-note">

@@ -82,15 +82,17 @@ const { items: categories } = await (
 const type = categories.find((c) => c.slug === 'non-la' && !c.parentId);
 if (!type) throw new Error('Category "non-la" is missing: run the database migrations first.');
 
-const post = (url, body, what) =>
-  must(
-    fetch(`${API}/v1/admin/${url}`, {
-      method: 'POST',
-      headers: { ...json, 'idempotency-key': crypto.randomUUID() },
-      body: JSON.stringify(body),
-    }),
-    what,
-  ).then((r) => r.json());
+const post = async (url, body, what) =>
+  (
+    await must(
+      await fetch(`${API}/v1/admin/${url}`, {
+        method: 'POST',
+        headers: { ...json, 'idempotency-key': crypto.randomUUID() },
+        body: JSON.stringify(body),
+      }),
+      what,
+    )
+  ).json();
 
 // Resumable: every step is skipped when its result is already there, so a half-finished run can simply be repeated.
 for (const p of PRODUCTS) {
@@ -118,24 +120,29 @@ for (const p of PRODUCTS) {
       `create ${p.slug}`,
     )
   ).id;
-  let detail = await (
-    await must(await fetch(`${API}/v1/admin/products/${id}`, { headers }), 'detail')
-  ).json();
-  if (detail.status === 'PUBLISHED') {
-    console.log(`skip ${p.slug} (already published)`);
-    continue;
-  }
+  const getDetail = async () =>
+    (await must(await fetch(`${API}/v1/admin/products/${id}`, { headers }), 'detail')).json();
+  let detail = await getDetail();
   if (detail.variants.length === 0) {
-    const variant = await post(
+    // the response is the whole product, with the new variant inside
+    detail = await post(
       `products/${id}/variants`,
       { sku: p.sku, name: 'Tiêu chuẩn', priceVnd: p.priceVnd, weightGrams: 250 },
       `variant ${p.slug}`,
     );
-    await post(
-      'inventory/adjustments',
-      { variantId: variant.id, delta: p.stock, reason: 'RECEIPT', note: 'Tồn kho khởi tạo' },
-      `stock ${p.slug}`,
-    );
+  }
+  // every variant without stock gets the starting stock (this also repairs a product an earlier run left at 0)
+  for (const v of detail.variants) {
+    if (v.stock === 0)
+      await post(
+        'inventory/adjustments',
+        { variantId: v.id, delta: p.stock, reason: 'RECEIPT', note: 'Tồn kho khởi tạo' },
+        `stock ${p.slug}`,
+      );
+  }
+  if (detail.status === 'PUBLISHED') {
+    console.log(`skip ${p.slug} (already published)`);
+    continue;
   }
   if (detail.images.length === 0) {
     const form = new FormData();
@@ -152,9 +159,7 @@ for (const p of PRODUCTS) {
       `image ${p.slug}`,
     );
   }
-  detail = await (
-    await must(await fetch(`${API}/v1/admin/products/${id}`, { headers }), 'detail')
-  ).json();
+  detail = await getDetail();
   await must(
     await fetch(`${API}/v1/admin/products/${id}`, {
       method: 'PATCH',

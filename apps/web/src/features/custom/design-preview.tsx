@@ -4,6 +4,7 @@ import {
   charmBox,
   charmUnits,
   designArea,
+  LAYER_SCALE,
   renderHatSvg,
   type CustomOptions,
   type HatImage,
@@ -25,6 +26,7 @@ export function DesignPreview({
   onSelect,
   onMove,
   onRotate,
+  onScale,
   hat = null,
   hatWidthCm,
   hatHeightCm,
@@ -37,6 +39,7 @@ export function DesignPreview({
   onSelect?: (index: number) => void;
   onMove?: (index: number, x: number, y: number) => void;
   onRotate?: (index: number, degrees: number) => void;
+  onScale?: (index: number, scale: number) => void;
   /** The shop's own picture of this hat, if it has one. */
   hat?: HatImage | null;
   /** Real width of the hat in cm: sizes charms in proportion. */
@@ -74,6 +77,21 @@ export function DesignPreview({
     const dx = e.clientX - (handle.left + handle.width / 2);
     const dy = e.clientY - (handle.top + handle.height / 2);
     onRotate(i, (Math.atan2(dx, -dy) * 180) / Math.PI);
+  };
+  /** Drag the corner knob: the layer grows or shrinks with the pointer's distance from its centre. */
+  const grow = (i: number, e: PointerEvent<HTMLSpanElement>) => {
+    if (!onScale || e.buttons === 0) return;
+    const handle = e.currentTarget.parentElement;
+    const r = handle?.getBoundingClientRect();
+    const current = layers[i]?.scale || 1;
+    if (!handle || !r) return;
+    const dx = e.clientX - (r.left + r.width / 2);
+    const dy = e.clientY - (r.top + r.height / 2);
+    // distance now vs the corner's distance at scale 1 (the handle's unrotated size already includes the scale)
+    const cornerAtOne = Math.hypot(handle.offsetWidth, handle.offsetHeight) / 2 / current;
+    const next = Math.hypot(dx, dy) / cornerAtOne;
+    const snapped = Math.round(next / LAYER_SCALE.step) * LAYER_SCALE.step;
+    onScale(i, Math.min(LAYER_SCALE.max, Math.max(LAYER_SCALE.min, Number(snapped.toFixed(2)))));
   };
   const nudge = (i: number, l: LayerInput, e: KeyboardEvent<HTMLButtonElement>) => {
     const step = e.shiftKey ? 0.05 : 0.01;
@@ -123,8 +141,8 @@ export function DesignPreview({
               style={{
                 left: `${((area.left + l.x * area.width) / area.viewW) * 100}%`,
                 top: `${((area.top + l.y * area.height) / area.viewH) * 100}%`,
-                width: `${(w / area.viewW) * 100}%`,
-                height: `${(h / area.viewH) * 100}%`,
+                width: `${((w * l.scale) / area.viewW) * 100}%`,
+                height: `${((h * l.scale) / area.viewH) * 100}%`,
                 transform: `translate(-50%, -50%) rotate(${l.rotation}deg)`,
               }}
               onPointerDown={(e) => {
@@ -135,6 +153,20 @@ export function DesignPreview({
               onKeyDown={(e) => nudge(i, l, e)}
               onFocus={() => onSelect?.(i)}
             >
+              {selected === i && onScale && (
+                <span
+                  className="scale-knob"
+                  title="Kéo để phóng to / thu nhỏ"
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    e.currentTarget.setPointerCapture(e.pointerId);
+                  }}
+                  onPointerMove={(e) => {
+                    e.stopPropagation();
+                    grow(i, e);
+                  }}
+                />
+              )}
               {selected === i && onRotate && (
                 <span
                   className="rotate-knob"

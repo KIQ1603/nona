@@ -35,7 +35,8 @@ async function assertParent(
   const parent = (await c.query('SELECT id, parent_id FROM categories WHERE id = $1', [parentId]))
     .rows[0];
   if (!parent) throw issue('Không tìm thấy loại sản phẩm đã chọn.');
-  if (parent.parent_id) throw issue('Chỉ được chọn một loại sản phẩm (không chọn nhóm con) làm cấp trên.');
+  if (parent.parent_id)
+    throw issue('Chỉ được chọn một loại sản phẩm (không chọn nhóm con) làm cấp trên.');
   if (selfId) {
     const kids = await c.query('SELECT 1 FROM categories WHERE parent_id = $1 LIMIT 1', [selfId]);
     if (kids.rows.length)
@@ -54,6 +55,7 @@ const camel: Record<string, string> = {
   style_code: 'styleCode',
   hat_width_cm: 'hatWidthCm',
   hat_height_cm: 'hatHeightCm',
+  charm_scale: 'charmScale',
   sort_weight: 'sortWeight',
   is_customizable: 'isCustomizable',
   is_featured: 'isFeatured',
@@ -204,7 +206,11 @@ export class AdminCatalogService {
       });
     } catch (e) {
       if ((e as { code?: string }).code === '23503')
-        throw new AppError('CONFLICT', 409, 'Không thể xóa danh mục đang có sản phẩm hoặc nhóm con.');
+        throw new AppError(
+          'CONFLICT',
+          409,
+          'Không thể xóa danh mục đang có sản phẩm hoặc nhóm con.',
+        );
       throw e;
     }
   }
@@ -223,8 +229,8 @@ export class AdminCatalogService {
     try {
       return await this.repo.db.transaction(async (c) => {
         const { rows } = await c.query(
-          `INSERT INTO products (category_id, slug, name, summary, description, badge, color_code, style_code, sort_weight, seo_title, seo_description, is_customizable, hat_width_cm, hat_height_cm, is_featured, status)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,'DRAFT') RETURNING id`,
+          `INSERT INTO products (category_id, slug, name, summary, description, badge, color_code, style_code, sort_weight, seo_title, seo_description, is_customizable, hat_width_cm, hat_height_cm, is_featured, charm_scale, status)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,'DRAFT') RETURNING id`,
           [
             input.categoryId,
             slug,
@@ -241,6 +247,7 @@ export class AdminCatalogService {
             input.hatWidthCm ?? null,
             input.hatHeightCm ?? null,
             input.isFeatured ?? false,
+            input.charmScale ?? 1,
           ],
         );
         await this.audit.record(

@@ -32,8 +32,10 @@ export const createProductSchema = z.object({
   colorCode: z.enum(colorCodes).nullable().optional(),
   styleCode: z.enum(styleCodes).nullable().optional(),
   /** Approximate real width of the hat in cm; sizes charms in the designer. */
-  hatWidthCm: z.number().min(5).max(100).nullable().optional(),
-  hatHeightCm: z.number().min(3).max(100).nullable().optional(),
+  hatWidthCm: z.number().min(1).max(100).nullable().optional(),
+  hatHeightCm: z.number().min(1).max(100).nullable().optional(),
+  /** Size of charms and letters on this product (1 = as configured; a keychain may use 0.5). */
+  charmScale: z.number().min(0.2).max(5).optional(),
   sortWeight: z.number().int().min(0).max(100_000).default(0),
   /** Customers may design a custom version of this product's variants (NONA Custom). */
   isCustomizable: z.boolean().default(true),
@@ -134,6 +136,7 @@ export const adminProductDetailSchema = z.object({
   styleCode: z.string().nullable(),
   hatWidthCm: z.number().nullable().default(null),
   hatHeightCm: z.number().nullable().default(null),
+  charmScale: z.number().default(1),
   sortWeight: z.number().int(),
   isCustomizable: z.boolean().default(false),
   isFeatured: z.boolean().default(false),

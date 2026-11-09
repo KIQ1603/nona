@@ -227,3 +227,5 @@ Use `409 Conflict` for stale state, duplicate operations, invalid transitions, a
 - `GET /v1/storefront/pages` (public, cached 15 s) -> `{homeTypes: {<categorySlug>: url}, homeAbout: url|null, aboutGallery: (url|null)[3], aboutValues: (url|null)[4]}`. A missing/`null` entry means the page uses its built-in picture from `/public/brand`.
 - `POST /v1/admin/pages/image` (`settings:write`, multipart `file`, JPEG/PNG/WebP, <= 8 MB, each side >= 300 px) -> `{imageKey: "pages/<uuid>.webp", imageUrl, width, height}`; re-encoded to WebP (max 1600 px), stored in the object store and audited (`pages.image_upload`).
 - `PATCH /v1/admin/settings/pages {version, value: {homeTypes, homeAbout, aboutGallery[<=3], aboutValues[<=4]}}` saves which uploaded keys fill which slot. Only keys of the form `pages/<id>.webp` are accepted (strict schema).
+
+- Admin products accept and return `charmScale` (0.2–5, default 1). `GET /v1/custom/catalog` products expose `hatWidthCm`/`hatHeightCm` already divided by `charmScale` (the yardstick the designer uses).

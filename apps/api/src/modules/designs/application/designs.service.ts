@@ -64,7 +64,7 @@ export class DesignsService {
   async catalog(): Promise<CustomCatalog> {
     const options = await this.settings.getCustomOptions();
     const { rows } = await this.db.query(
-      `SELECT p.id, p.slug, p.name, p.hat_width_cm, p.hat_height_cm,
+      `SELECT p.id, p.slug, p.name, COALESCE(p.hat_width_cm, CASE WHEN p.hat_height_cm IS NULL AND p.charm_scale <> 1 THEN 40 END) / p.charm_scale AS hat_width_cm, p.hat_height_cm / p.charm_scale AS hat_height_cm,
               t.slug AS type_slug, t.name AS type_name,
               (SELECT object_key FROM product_images WHERE product_id = p.id ORDER BY (variant_id IS NOT NULL), position, created_at LIMIT 1) AS image_key
        FROM products p
@@ -192,7 +192,9 @@ export class DesignsService {
 
   /** Name of the palette colour a layer uses (absent or unknown = the first colour, as drawn). */
   private colorName(options: CustomOptions, id?: string): string | null {
-    return (options.stickerColors.find((c) => c.id === id) ?? options.stickerColors[0])?.name ?? null;
+    return (
+      (options.stickerColors.find((c) => c.id === id) ?? options.stickerColors[0])?.name ?? null
+    );
   }
 
   private layerDto(l: LayerRow) {
