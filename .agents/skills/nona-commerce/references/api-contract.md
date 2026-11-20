@@ -229,3 +229,10 @@ Use `409 Conflict` for stale state, duplicate operations, invalid transitions, a
 - `PATCH /v1/admin/settings/pages {version, value: {homeTypes, homeAbout, aboutGallery[<=3], aboutValues[<=4]}}` saves which uploaded keys fill which slot. Only keys of the form `pages/<id>.webp` are accepted (strict schema).
 
 - Admin products accept and return `charmScale` (0.2–5, default 1). `GET /v1/custom/catalog` products expose `hatWidthCm`/`hatHeightCm` already divided by `charmScale` (the yardstick the designer uses).
+
+## Accounts and traffic analytics (migration 0031)
+
+- `POST /v1/analytics/events` (public, anonymous, 204): body `{ visitorId, path, referrer? }`. The server derives the kind (`/san-pham/<slug>` → `PRODUCT_VIEW`, otherwise `PAGE_VIEW`), ignores `/admin`, `/api`, `/_next`, `/media`, `/dev`, drops the shop's own host as referrer, and rate-limits per visitor (60/min) and per IP (240/min). Invalid bodies are 400.
+- `GET /v1/admin/analytics?days=7|30|90` (`users:read`): traffic (page views, unique visitors, product views), zero-filled daily series, top pages, top products, referrers, and engagement counted from existing tables (new accounts, cart adds, wishlist adds, designs started/submitted, orders, order-status mix). Engagement therefore covers history from before tracking existed; traffic starts at `trackingSince`.
+- `GET /v1/admin/users?q&role=CUSTOMER|STAFF&status&page&pageSize` (`users:read`): accounts with email/phone, verification flags, Google link, created/last login/last seen, order count, spend (revenue statuses), wishlist and design counts, plus shop-wide totals. Never returns password hashes. Read-only; no account mutation endpoints.
+- `users:read` is granted to `ADMIN` only.

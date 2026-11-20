@@ -98,3 +98,7 @@ Migration 0024: `users.email` is nullable (CHECK: email or phone), unique login 
 `site_settings.pages` (migration 0029): `{homeTypes: {slug: key}, homeAbout, aboutGallery[], aboutValues[]}` — object-store keys (`pages/<uuid>.webp`) of the pictures an admin chose for Trang chủ and Giới thiệu; empty = built-in defaults.
 
 `products.charm_scale` (migration 0030, numeric(4,2), default 1, CHECK 0.2–5): per-product multiplier for the size of charms and letters in the designer.
+
+## Traffic events (migration 0031)
+
+`analytics_events(id, occurred_at, visitor_id, kind PAGE_VIEW|PRODUCT_VIEW, path, product_slug, referrer_host)`. Anonymous by design: no IP, user agent or user id; `visitor_id` is a random id generated in the browser. Indexed on `occurred_at` and `(kind, occurred_at)`. Rollback: `DROP TABLE analytics_events`. Retention is not automated yet; prune with `DELETE … WHERE occurred_at < now() - interval '13 months'` if the table grows.

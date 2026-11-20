@@ -22,6 +22,8 @@ const NAV: { href: string; label: string; permission?: Permission }[] = [
   { href: '/admin/landing', label: 'Trang chủ (landing)', permission: 'settings:write' },
   { href: '/admin/contact', label: 'Liên hệ và kênh chat', permission: 'settings:write' },
   { href: '/admin/settings', label: 'Khuyến mãi và cấu hình', permission: 'settings:write' },
+  { href: '/admin/users', label: 'Tài khoản', permission: 'users:read' },
+  { href: '/admin/analytics', label: 'Thống kê tương tác', permission: 'users:read' },
   { href: '/admin/system', label: 'Hệ thống', permission: 'system:read' },
 ];
 

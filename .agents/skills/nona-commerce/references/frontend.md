@@ -92,3 +92,7 @@ Test desktop/mobile navigation, filter URL restoration, cart failures, checkout 
 
 - **Page pictures are admin-configurable:** Admin → "Ảnh Trang chủ và Giới thiệu" (`/admin/page-images`, `settings:write`) changes the product-type card pictures and the "Về Sắc Chằm" picture on Trang chủ, and the story strip (3) and "Giá trị cốt lõi" (4) pictures on Giới thiệu. Each slot can be reset to the built-in picture. Text stays in code. Public media serves the `pages/` prefix through the `/media` rewrite.
 - **Custom options admin layout:** "Chữ" (on/off switch, letter height, price per letter, max letters per typing) and "Số lớp trên sản phẩm" (max layers; empty = unlimited) are separate cards. Turning text off hides the "Chữ" tab in the designer.
+
+## Admin: Tài khoản and Thống kê tương tác
+
+`/admin/users` (searchable, filterable, paginated account list with summary tiles) and `/admin/analytics` (7/30/90 day traffic and engagement), both visible only with `users:read` (ADMIN). The storefront layout mounts `PageTracker`, which sends one anonymous beacon per navigation (browser-generated id in `localStorage`; nothing is sent when storage is blocked) and never blocks rendering.

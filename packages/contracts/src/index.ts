@@ -1,4 +1,5 @@
 export * from './account';
+export * from './analytics';
 export * from './admin-catalog';
 export * from './articles';
 export * from './auth';

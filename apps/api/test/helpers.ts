@@ -76,7 +76,7 @@ function freePort(): Promise<number> {
 export async function resetAll(pool: pg.Pool, app?: NestExpressApplication) {
   app?.get(LoginThrottle).clear();
   await pool.query(
-    'TRUNCATE auth_challenges, articles, design_layers, custom_design_versions, custom_designs, design_assets, coupons, payment_events, refunds, user_mfa, orders, outbox_events, password_reset_tokens, inventory_reservations, inventory_movements, product_images, product_variants, products, categories, users, idempotency_keys CASCADE',
+    'TRUNCATE analytics_events, auth_challenges, articles, design_layers, custom_design_versions, custom_designs, design_assets, coupons, payment_events, refunds, user_mfa, orders, outbox_events, password_reset_tokens, inventory_reservations, inventory_movements, product_images, product_variants, products, categories, users, idempotency_keys CASCADE',
   );
   await pool.query(
     `INSERT INTO site_settings (key, value, version) VALUES

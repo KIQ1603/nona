@@ -2,6 +2,7 @@ import { ContactFloat } from '@/features/contact/contact-float';
 import { getCategories } from '@/features/catalog/api/catalog.api';
 import { getStorefrontSettings } from '@/features/settings/settings.api';
 import { Suspense } from 'react';
+import { PageTracker } from '@/features/analytics/page-tracker';
 import { ScrollReset } from '@/components/layout/scroll-reset';
 import { MobileNav } from '@/components/layout/mobile-nav';
 import { SearchPanel } from '@/components/layout/search-panel';
@@ -36,6 +37,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   const [{ contact }, types] = await Promise.all([getStorefrontSettings(), productTypes()]);
   return (
     <Providers>
+      <PageTracker />
       <div className="site-shell">
         <a className="skip-link" href="#main">
           Bỏ qua điều hướng

@@ -3,6 +3,7 @@ import { IdempotencyModule } from './common/idempotency/idempotency.module';
 import { AccountsModule } from './modules/accounts/accounts.module';
 import { AdminCatalogModule } from './modules/admin-catalog/admin-catalog.module';
 import { ArticlesModule } from './modules/articles/articles.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CartModule } from './modules/cart/cart.module';
@@ -39,6 +40,7 @@ import { DatabaseModule } from './platform/database/database.module';
     CouponsModule,
     DesignsModule,
     DashboardModule,
+    AnalyticsModule,
     ArticlesModule,
     OrdersModule,
     PaymentsModule,
